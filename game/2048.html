@@ -1,0 +1,193 @@
+             <!DOCTYPE html>
+<html>
+<head>
+    <title>2048 Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #faf8ef;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            background-color: #bbada0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .cell {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(238, 228, 218, 0.35);
+            border-radius: 3px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #776e65;
+        }
+
+        .number {
+            background-color: #eee4da;
+        }
+
+        .number-2 { background-color: #eee4da; }
+        .number-4 { background-color: #ede0c8; }
+        .number-8 { background-color: #f2b179; color: white; }
+        .number-16 { background-color: #f59563; color: white; }
+        .number-32 { background-color: #f67c5f; color: white; }
+        .number-64 { background-color: #f65e3b; color: white; }
+        .number-128 { background-color: #edcf72; color: white; }
+        .number-256 { background-color: #edcc61; color: white; }
+        .number-512 { background-color: #edc850; color: white; }
+        .number-1024 { background-color: #edc53f; color: white; }
+        .number-2048 { background-color: #edc22e; color: white; }
+
+        #score {
+            margin: 20px 0;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <h1>2048</h1>
+    <div id="score">Score: 0</div>
+    <div id="game-board"></div>
+    <button onclick="newGame()" style="margin-top: 20px;">New Game</button>
+
+    <script>
+        let board = [];
+        let score = 0;
+        const size = 4;
+
+        function initBoard() {
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = '';
+            board = Array(size).fill().map(() => Array(size).fill(0));
+
+            for(let i = 0; i < size; i++) {
+                for(let j = 0; j < size; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${i}-${j}`;
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+
+        function updateBoard() {
+            for(let i = 0; i < size; i++) {
+                for(let j = 0; j < size; j++) {
+                    const cell = document.getElementById(`cell-${i}-${j}`);
+                    const num = board[i][j];
+                    cell.className = `cell${num ? ' number number-' + num : ''}`;
+                    cell.textContent = num || '';
+                }
+            }
+            document.getElementById('score').textContent = `Score: ${score}`;
+        }
+
+        function addNewNumber() {
+            const emptyCells = [];
+            for(let i = 0; i < size; i++) {
+                for(let j = 0; j < size; j++) {
+                    if(board[i][j] === 0) {
+                        emptyCells.push({x: i, y: j});
+                    }
+                }
+            }
+            if(emptyCells.length > 0) {
+                const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                board[randomCell.x][randomCell.y] = Math.random() < 0.9 ? 2 : 4;
+            }
+        }
+
+        function move(direction) {
+            let moved = false;
+            const originalBoard = JSON.stringify(board);
+
+            // 转置矩阵（用于垂直移动）
+            const transpose = () => {
+                board = board[0].map((_, colIndex) => board.map(row => row[colIndex]));
+            };
+
+            // 反转行（用于向右和向下移动）
+            const reverseRows = () => {
+                board.forEach(row => row.reverse());
+            };
+
+            if(direction === 'up' || direction === 'down') transpose();
+            if(direction === 'right' || direction === 'down') reverseRows();
+
+            // 处理移动和合并
+            for(let i = 0; i < size; i++) {
+                let row = board[i].filter(x => x !== 0);
+                for(let j = 0; j < row.length - 1; j++) {
+                    if(row[j] === row[j + 1]) {
+                        row[j] *= 2;
+                        score += row[j];
+                        row.splice(j + 1, 1);
+                        moved = true;
+                    }
+                }
+                while(row.length < size) row.push(0);
+                board[i] = row;
+            }
+
+            if(direction === 'right' || direction === 'down') reverseRows();
+            if(direction === 'up' || direction === 'down') transpose();
+
+            if(originalBoard !== JSON.stringify(board)) moved = true;
+            return moved;
+        }
+
+        function handleKeyPress(event) {
+            const directions = {
+                'ArrowLeft': 'left',
+                'ArrowRight': 'right',
+                'ArrowUp': 'up',
+                'ArrowDown': 'down'
+            };
+
+            if(directions[event.key]) {
+                event.preventDefault();
+                if(move(directions[event.key])) {
+                    addNewNumber();
+                    updateBoard();
+                    checkGameOver();
+                }
+            }
+        }
+
+        function checkGameOver() {
+            for(let i = 0; i < size; i++) {
+                for(let j = 0; j < size; j++) {
+                    if(board[i][j] === 0) return false;
+                    if(i < size - 1 && board[i][j] === board[i + 1][j]) return false;
+                    if(j < size - 1 && board[i][j] === board[i][j + 1]) return false;
+                }
+            }
+            alert('Game Over!');
+            return true;
+        }
+
+        function newGame() {
+            score = 0;
+            initBoard();
+            addNewNumber();
+            addNewNumber();
+            updateBoard();
+        }
+
+        // 初始化游戏
+        document.addEventListener('keydown', handleKeyPress);
+        newGame();
+    </script>
+</body>
+</html>

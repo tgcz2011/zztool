@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>渣渣工具站 zztool.netlify.app</title>
     <style>
-        /* 基础样式 */
         * {
             margin: 0;
             padding: 0;
@@ -13,12 +12,11 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
-        /* 紧急通知栏 */
         .alert-bar {
             background: #ffd700;
             padding: 0.8rem;
             text-align: center;
-            display: none; /* 默认隐藏 */
+            display: none;
             position: relative;
         }
 
@@ -30,7 +28,6 @@
             color: #333;
         }
 
-        /* 导航栏样式 */
         .navbar {
             background: #2c3e50;
             padding: 1rem 2rem;
@@ -68,14 +65,12 @@
             color: #3498db;
         }
 
-        /* 工具容器 */
         .container {
             max-width: 1200px;
             margin: 2rem auto;
             padding: 0 1rem;
         }
 
-        /* 工具卡片布局 */
         .tool-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -119,7 +114,38 @@
             margin-bottom: 1rem;
         }
 
-        /* 响应式设计 */
+        .section-divider {
+            border: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #2c3e50 50%, transparent);
+            margin: 3rem auto;
+            width: 80%;
+        }
+
+        .section-title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .section-title::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: #3498db;
+        }
+
+        .game-card .color-tag {
+            background: #9b59b6 !important;
+        }
+
         @media (max-width: 768px) {
             .tool-grid {
                 grid-template-columns: 1fr;
@@ -134,38 +160,40 @@
                 gap: 1rem;
                 justify-content: center;
             }
+            .section-divider {
+                width: 90%;
+                margin: 2rem auto;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- 紧急通知栏 -->
     <div class="alert-bar" id="alertBar">
         <span id="alertText"></span>
         <span class="alert-close" onclick="closeAlert()">×</span>
     </div>
 
-    <!-- 导航栏 -->
     <nav class="navbar">
         <a href="/" class="nav-title">渣渣工具站</a>
-        <ul class="nav-menu" id="navMenu">
-            <!-- 菜单项由JS生成 -->
-        </ul>
+        <ul class="nav-menu" id="navMenu"></ul>
     </nav>
 
     <div class="container">
-        <div class="tool-grid" id="toolContainer">
-            <!-- 工具卡片由JS生成 -->
-        </div>
+        <div class="tool-grid" id="toolContainer"></div>
+    </div>
+
+    <hr class="section-divider">
+    <div class="container">
+        <h2 class="section-title">游戏专栏</h2>
+        <div class="tool-grid" id="gameContainer"></div>
     </div>
 
     <script>
-        // 导航菜单数据
         const menuItems = [
-            { text: "", url: "/" },
+            { text: "首页", url: "/" }, // 修正：补充第一个菜单项文本
             { text: "联系我们", url: "/us.html" }
         ];
 
-        // 工具数据
         const tools = [
             {
                 title: "渣渣AI",
@@ -187,56 +215,78 @@
             }
         ];
 
-        // 紧急通知内容（设为空字符串则不显示）
+        const games = [
+            {
+                title: "2048",
+                url: "/game/2048.html",
+                description: "经典数字合并游戏",
+                color: "#9b59b6"
+            },
+            {
+                title: "俄罗斯方块",
+                url: "/game/tetris.html",
+                description: "永恒的方块挑战",
+                color: "#9b59b6"
+            },
+            {
+                title: "扫雷",
+                url: "/game/minesweeper.html",
+                description: "经典扫雷游戏",
+                color: "#9b59b6"
+            }
+        ];
+
         const alertMessage = "";
 
-        // 初始化导航菜单
         function initNavMenu() {
             const menuContainer = document.getElementById('navMenu');
             menuItems.forEach(item => {
                 const li = document.createElement('li');
-                li.innerHTML = `<a href="${item.url}">${item.text}</a>`;
+                li.innerHTML = `<a href="${item.url}" aria-label="${item.text}">${item.text}</a>`;
                 menuContainer.appendChild(li);
             });
         }
 
-        // 初始化紧急通知
         function initAlert() {
             const alertBar = document.getElementById('alertBar');
             const alertText = document.getElementById('alertText');
-            
-            if (alertMessage && alertMessage.trim() !== "") {
+            if (alertMessage && alertMessage.trim()) {
                 alertText.textContent = alertMessage;
                 alertBar.style.display = 'block';
             }
         }
 
-        // 关闭通知
         function closeAlert() {
             document.getElementById('alertBar').style.display = 'none';
         }
 
-        // 初始化工具卡片
-        function initTools() {
-            const container = document.getElementById('toolContainer');
-            tools.forEach(tool => {
+        function createCard(container, items, isGame) {
+            items.forEach(item => {
                 const card = document.createElement('a');
-                card.href = tool.url;
-                card.className = 'tool-card';
+                card.href = item.url;
+                card.className = `tool-card ${isGame ? 'game-card' : ''}`;
                 card.innerHTML = `
-                    <div class="color-tag" style="background: ${tool.color}"></div>
-                    <h2>${tool.title}</h2>
-                    <p>${tool.description}</p>
+                    <div class="color-tag" style="background: ${item.color}"></div>
+                    <h2>${item.title}</h2>
+                    <p>${item.description}</p>
                 `;
                 container.appendChild(card);
             });
         }
 
-        // 页面初始化
+        function initTools() {
+            createCard(document.getElementById('toolContainer'), tools, false);
+        }
+
+        function initGames() {
+            createCard(document.getElementById('gameContainer'), games, true);
+        }
+
         window.onload = function() {
             initNavMenu();
             initAlert();
             initTools();
+            initGames();
         };
     </script>
 </body>
