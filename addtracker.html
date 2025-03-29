@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>磁力添加tracker</title>
+    <style>
+        :root {
+            --primary: #2196F3;
+            --success: #4CAF50;
+            --danger: #f44336;
+            --warning: #FF9800;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .primary-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        .secondary-btn {
+            background: #e3f2fd;
+            color: var(--primary);
+        }
+
+        .active {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+        /* 优化结果框布局 */
+        .result-box {
+            margin-top: 1.5rem;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .link-container {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .truncated-link {
+            color: var(--primary);
+            word-break: break-all;
+            text-decoration: none;
+            flex: 1;
+        }
+
+        .truncated-link:hover {
+            text-decoration: underline;
+        }
+
+        .toggle-mode {
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        .status-indicator {
+            color: var(--success);
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+
+        .error { color: var(--danger); }
+        .loading { color: var(--warning); }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            .btn-group {
+                grid-template-columns: 1fr;
+            }
+
+            .result-box {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .status-indicator {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+	<div style="text-align: center; padding: 20px; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <a href="http://zztool.us.kg" target="_blank" 
+           style="color: #333333; text-decoration: none; font-size: 24px; transition: color 0.3s ease;"
+           onmouseover="this.style.color='#0056b3'" onmouseout="this.style.color='#333333'">
+            渣渣工具箱-一个无聊的工具箱
+        </a>
+    </div>
+
+    <div class="container">
+        <h1 style="margin-bottom: 1.5rem; color: #2c3e50;">🔗 磁力链接增强工具</h1>
+
+        <div class="input-group">
+            <input type="text" id="magnet" placeholder="在此粘贴磁力链接...">
+        </div>
+
+        <div class="btn-group">
+            <button class="secondary-btn active" id="bestBtn" onclick="selectList('best')">
+                🚀 精选列表
+            </button>
+            <button class="secondary-btn" id="allBtn" onclick="selectList('all')">
+                📦 完整列表
+            </button>
+        </div>
+
+        <button class="primary-btn" onclick="processMagnet()">
+            ⚡ 生成并复制链接
+        </button>
+
+        <!-- 优化后的结果展示区域 -->
+        <div class="result-box" id="resultBox" style="display: none;">
+            <div class="link-container">
+                <a class="truncated-link" id="truncatedLink" target="_blank" rel="noopener noreferrer"></a>
+                <span class="toggle-mode" onclick="toggleLink()">[切换显示]</span>
+            </div>
+            <div class="status-indicator" id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        const config = {
+            listType: 'best',
+            trackerUrls: {
+                best: 'https://cf.trackerslist.com/best.txt',
+                all: 'https://cf.trackerslist.com/all.txt'
+            },
+            cache: {
+                best: null,
+                all: null
+            }
+        };
+
+        function selectList(type) {
+            config.listType = type;
+            document.querySelectorAll('.secondary-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`${type}Btn`).classList.add('active');
+        }
+
+        async function processMagnet() {
+            const magnet = document.getElementById('magnet').value.trim();
+            const resultBox = document.getElementById('resultBox');
+            const status = document.getElementById('status');
+
+            resultBox.style.display = 'none';
+            status.className = 'status-indicator loading';
+            status.textContent = '🚀 正在生成...';
+
+            try {
+                if (!magnet.startsWith('magnet:?')) {
+                    throw new Error('无效的磁力链接格式');
+                }
+
+                if (!config.cache[config.listType]) {
+                    await fetchTrackers(config.listType);
+                }
+
+                const trackers = config.cache[config.listType];
+                const finalLink = magnet + trackers.join('');
+
+                await navigator.clipboard.writeText(finalLink);
+
+                resultBox.style.display = 'flex';
+                status.className = 'status-indicator success';
+                status.textContent = '✅ 已复制';
+                updateTruncatedLink(finalLink);
+
+            } catch (error) {
+                status.className = 'status-indicator error';
+                status.textContent = `❌ ${error.message || '操作失败'}`;
+                resultBox.style.display = 'flex';
+            }
+        }
+
+        function updateTruncatedLink(link) {
+            const maxLength = window.innerWidth > 600 ? 60 : 30;
+            const truncated = link.length > maxLength ? 
+                `${link.substring(0, maxLength)}...${link.substring(link.length - 20)}` : 
+                link;
+
+            const linkElem = document.getElementById('truncatedLink');
+            linkElem.href = link;
+            linkElem.textContent = truncated;
+            linkElem.dataset.full = link;
+            linkElem.dataset.truncated = truncated;
+        }
+
+        function toggleLink() {
+            const linkElem = document.getElementById('truncatedLink');
+            if (linkElem.textContent === linkElem.dataset.truncated) {
+                linkElem.textContent = linkElem.dataset.full;
+            } else {
+                linkElem.textContent = linkElem.dataset.truncated;
+            }
+        }
+
+        async function fetchTrackers(type) {
+            try {
+                const response = await fetch(config.trackerUrls[type]);
+                const text = await response.text();
+                config.cache[type] = text.split('\n')
+                    .filter(t => t.trim() !== '')
+                    .map(t => `&tr=${encodeURIComponent(t.trim())}`);
+            } catch (error) {
+                throw new Error('Tracker列表加载失败');
+            }
+        }
+
+        fetchTrackers('best');
+    </script>
+</body>
+</html>

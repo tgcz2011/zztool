@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>去除#号</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            font-size: 16px;
+            resize: vertical; /* 允许垂直调整大小 */
+        }
+        .button-group {
+            display: flex;
+            gap: 10px; /* 按钮间距 */
+        }
+        button {
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: opacity 0.3s;
+        }
+        #processBtn {
+            background-color: #4CAF50; /* 处理按钮颜色 */
+        }
+        #copyBtn {
+            background-color: #2196F3; /* 复制按钮颜色 */
+        }
+        button:hover {
+            opacity: 0.8; /* 悬停透明效果 */
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+	<div style="text-align: center; padding: 20px; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <a href="http://zztool.us.kg" target="_blank" 
+           style="color: #333333; text-decoration: none; font-size: 24px; transition: color 0.3s ease;"
+           onmouseover="this.style.color='#0056b3'" onmouseout="this.style.color='#333333'">
+            渣渣工具箱-一个无聊的工具箱
+        </a>
+    </div>
+
+    <div class="container">
+        <h2>去除所有 # 号</h2>
+        <textarea id="input" placeholder="在此输入包含#号的文本..."></textarea>
+        <div class="button-group">
+            <button id="processBtn" onclick="removeHashes()">去除#号</button>
+            <button id="copyBtn" onclick="copyText()" disabled>复制全文</button>
+        </div>
+        <textarea id="output" readonly placeholder="处理后的文本将显示在这里..."></textarea>
+    </div>
+
+    <script>
+        // 去除#号功能
+        function removeHashes() {
+            const inputText = document.getElementById('input').value;
+            const outputText = inputText.replace(/#/g, '');
+            document.getElementById('output').value = outputText;
+
+            // 处理完成后激活复制按钮
+            document.getElementById('copyBtn').disabled = !outputText;
+        }
+
+        // 复制功能
+        function copyText() {
+            const outputText = document.getElementById('output');
+
+            outputText.select();
+            try {
+                navigator.clipboard.writeText(outputText.value)
+                    .then(() => alert('已成功复制到剪贴板！'))
+                    .catch(err => alert('复制失败，请手动选择文本'));
+            } catch (err) {
+                // 兼容旧版浏览器
+                document.execCommand('copy');
+                alert('已复制到剪贴板');
+            }
+        }
+
+        // 输入框变化时重置状态
+        document.getElementById('input').addEventListener('input', () => {
+            document.getElementById('copyBtn').disabled = true;
+        });
+    </script>
+</body>
+</html>

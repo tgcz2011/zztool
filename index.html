@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>渣渣工具站 zztool.netlify.app</title>
+    <style>
+        /* 基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* 紧急通知栏 */
+        .alert-bar {
+            background: #ffd700;
+            padding: 0.8rem;
+            text-align: center;
+            display: none; /* 默认隐藏 */
+            position: relative;
+        }
+
+        .alert-close {
+            position: absolute;
+            right: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* 导航栏样式 */
+        .navbar {
+            background: #2c3e50;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-title {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-size: 1rem;
+        }
+
+        .nav-menu a:hover {
+            color: #3498db;
+        }
+
+        /* 工具容器 */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* 工具卡片布局 */
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            padding: 1rem;
+        }
+
+        .tool-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tool-card h2 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .tool-card p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .color-tag {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            margin-bottom: 1rem;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            .nav-menu {
+                flex-wrap: wrap;
+                gap: 1rem;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 紧急通知栏 -->
+    <div class="alert-bar" id="alertBar">
+        <span id="alertText"></span>
+        <span class="alert-close" onclick="closeAlert()">×</span>
+    </div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <a href="/" class="nav-title">渣渣工具站</a>
+        <ul class="nav-menu" id="navMenu">
+            <!-- 菜单项由JS生成 -->
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="tool-grid" id="toolContainer">
+            <!-- 工具卡片由JS生成 -->
+        </div>
+    </div>
+
+    <script>
+        // 导航菜单数据
+        const menuItems = [
+            { text: "", url: "/" },
+            { text: "联系我们", url: "/us.html" }
+        ];
+
+        // 工具数据
+        const tools = [
+            {
+                title: "渣渣AI",
+                url: "/chat.html",
+                description: "一个基于Deepseek的简易AI",
+                color: "#e74c3c"
+            },
+            {
+                title: "磁力链接添加tracker",
+                url: "/addtracker.html",
+                description: "让你的磁力下载速度原地起飞",
+                color: "#3498db"
+            },
+            {
+                title: "删除#",
+                url: "/del.html",
+                description: "总有一天你需要删除文本中的所有#",
+                color: "#2ecc71"
+            }
+        ];
+
+        // 紧急通知内容（设为空字符串则不显示）
+        const alertMessage = "";
+
+        // 初始化导航菜单
+        function initNavMenu() {
+            const menuContainer = document.getElementById('navMenu');
+            menuItems.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="${item.url}">${item.text}</a>`;
+                menuContainer.appendChild(li);
+            });
+        }
+
+        // 初始化紧急通知
+        function initAlert() {
+            const alertBar = document.getElementById('alertBar');
+            const alertText = document.getElementById('alertText');
+            
+            if (alertMessage && alertMessage.trim() !== "") {
+                alertText.textContent = alertMessage;
+                alertBar.style.display = 'block';
+            }
+        }
+
+        // 关闭通知
+        function closeAlert() {
+            document.getElementById('alertBar').style.display = 'none';
+        }
+
+        // 初始化工具卡片
+        function initTools() {
+            const container = document.getElementById('toolContainer');
+            tools.forEach(tool => {
+                const card = document.createElement('a');
+                card.href = tool.url;
+                card.className = 'tool-card';
+                card.innerHTML = `
+                    <div class="color-tag" style="background: ${tool.color}"></div>
+                    <h2>${tool.title}</h2>
+                    <p>${tool.description}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 页面初始化
+        window.onload = function() {
+            initNavMenu();
+            initAlert();
+            initTools();
+        };
+    </script>
+</body>
+</html>
