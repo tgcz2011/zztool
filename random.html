@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>随机数生成器</title>
+    <style>
+        body {
+            font-family: '微软雅黑', sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f0f8ff;
+        }
+
+        #agreementContainer {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        #mainContent {
+            display: none;
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        input {
+            padding: 8px;
+            margin: 0 5px;
+            border: 1px solid #4CAF50;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 5px;
+        }
+
+        #bilibiliSearch {
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+
+        iframe {
+            width: 100%;
+            height: 200px;
+            border: none;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="agreementContainer">
+        <h2>用户协议</h2>
+        <iframe src="/用户协议与隐私政策/randomuser.txt"></iframe>
+        <h2>隐私政策</h2>
+        <iframe src="/用户协议与隐私政策/randomprivate.txt"></iframe>
+        <button id="agreeBtn" disabled>请仔细阅读协议（剩余10秒）</button>
+    </div>
+
+    <div id="mainContent">
+        <h1>随机数生成器</h1>
+
+        <div class="input-group">
+            <label>范围：</label>
+            <input type="number" id="minVal" value="1" min="1">
+            至
+            <input type="number" id="maxVal" value="41" min="1">
+
+            <label style="margin-left:20px">数量：</label>
+            <input type="number" id="count" value="1" min="1">
+        </div>
+
+        <button onclick="generateNumbers()">开始抽签</button>
+        <div id="result"></div>
+
+        <div id="bilibiliSearch">
+            <h3>B站视频搜索</h3>
+            <form action="https://search.bilibili.com/all" method="get" target="_blank">
+                <input type="text" name="keyword" placeholder="输入视频关键词">
+                <button type="submit">搜索</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 倒计时处理
+        let seconds = 10;
+        const timer = setInterval(() => {
+            seconds--;
+            document.getElementById('agreeBtn').innerHTML =
+                `请仔细阅读协议（剩余${seconds}秒）`;
+            if(seconds <= 0) {
+                clearInterval(timer);
+                document.getElementById('agreeBtn').disabled = false;
+                document.getElementById('agreeBtn').innerHTML = "同意协议";
+            }
+        }, 1000);
+
+        // 同意协议处理
+        document.getElementById('agreeBtn').onclick = () => {
+            document.getElementById('agreementContainer').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+        }
+
+        // 随机数生成逻辑
+        const generatedNumbers = new Set();
+
+        function generateNumbers() {
+            const min = parseInt(document.getElementById('minVal').value);
+            const max = parseInt(document.getElementById('maxVal').value);
+            const count = parseInt(document.getElementById('count').value);
+
+            if(min > max) {
+                alert("最小值不能大于最大值");
+                return;
+            }
+
+            const availableNumbers = Array.from({length: max - min + 1},
+                (_, i) => i + min).filter(n => !generatedNumbers.has(n));
+
+            if(availableNumbers.length < count) {
+                alert("可用号码数量不足");
+                return;
+            }
+
+            const result = [];
+            while(result.length < count && availableNumbers.length > 0) {
+                const index = Math.floor(Math.random() * availableNumbers.length);
+                result.push(availableNumbers.splice(index, 1)[0]);
+            }
+
+            result.forEach(n => generatedNumbers.add(n));
+            document.getElementById('result').innerHTML =
+                `抽中学号：${result.join(', ')}`;
+        }
+    </script>
+</body>
+</html>
