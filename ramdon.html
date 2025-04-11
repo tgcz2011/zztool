@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>随机数生成器</title>
+    <style>
+        /* 原有样式保持不变 */
+        body {
+            font-family: '微软雅黑', sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f0f8ff;
+        }
+
+        #agreementContainer {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            height: 650px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        #mainContent {
+            display: none;
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        input {
+            padding: 8px;
+            margin: 0 5px;
+            border: 1px solid #4CAF50;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 5px;
+        }
+
+        #bilibiliSearch {
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+
+        iframe {
+            width: 100%;
+            height: 200px;
+            border: none;
+            margin: 10px 0;
+        }
+
+        .reset-btn {
+            background: #ff5722;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="agreementContainer">
+        <h2>用户协议</h2>
+        <iframe src="用户协议.txt"></iframe>
+        <h2>隐私政策</h2>
+        <iframe src="隐私政策.txt"></iframe>
+        <button id="agreeBtn" disabled>请仔细阅读协议（剩余10秒）</button>
+    </div>
+
+    <div id="mainContent">
+        <h1>课堂学号抽签工具</h1>
+
+        <div class="input-group">
+            <label>范围：</label>
+            <input type="number" id="min" value="1" min="1">
+            <span>至</span>
+            <input type="number" id="max" value="41" min="1">
+        </div>
+
+        <div class="input-group">
+            <label>抽取数量：</label>
+            <input type="number" id="count" value="1" min="1">
+        </div>
+
+        <button onclick="generateNumbers()">开始抽签</button>
+        <div id="result"></div>
+
+        <div id="bilibiliSearch">
+            <h3>B站视频搜索</h3>
+            <form action="https://search.bilibili.com/all" method="get" target="_blank">
+                <input type="text" name="keyword" placeholder="输入视频关键词">
+                <button type="submit">搜索</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ========== 核心逻辑 ==========
+        let generatedNumbers = new Set();
+
+        function generateNumbers() {
+            const min = parseInt(document.getElementById('min').value);
+            const max = parseInt(document.getElementById('max').value);
+            const count = parseInt(document.getElementById('count').value);
+
+            // 验证输入范围
+            if (min > max) {
+                alert("最小值不能大于最大值");
+                return;
+            }
+
+            // 动态构建权重池
+            const weightedNumbers = {};
+            // 基础号码池
+            for(let i = min; i <= max; i++) weightedNumbers[i] = 1;
+
+            // 特殊配置（在此处添加自定义权重）
+            //weightedNumbers[15] = 1000000;  // 示例：15号超高权重
+            // weightedNumbers[42] = 2;      // 添加额外号码
+            // weightedNumbers[43] = 3;
+            weightedNumbers[20] = 10;
+            weightedNumbers[38] = 0.01;
+
+            // 构建动态权重池
+            let weightPool = Object.keys(weightedNumbers)
+                .map(Number)
+                .filter(n => !generatedNumbers.has(n))
+                .map(n => ({num: n, weight: weightedNumbers[n]}));
+
+            if(weightPool.length < count) {
+                alert("可用号码数量不足");
+                return;
+            }
+
+            const result = [];
+            for(let i = 0; i < count; i++) {
+                const totalWeight = weightPool.reduce((sum, item) => sum + item.weight, 0);
+                const random = crypto.getRandomValues(new Uint32Array(1))[0] / 4294967295 * totalWeight;
+
+                let accumulated = 0;
+                for(const item of weightPool) {
+                    accumulated += item.weight;
+                    if(random <= accumulated) {
+                        result.push(item.num);
+                        generatedNumbers.add(item.num);
+                        weightPool = weightPool.filter(x => x.num !== item.num);
+                        break;
+                    }
+                }
+            }
+
+            document.getElementById('result').innerHTML =
+                `抽中学号：<strong>${result.join(', ')}</strong><br>
+                <button class="reset-btn" onclick="resetPool()">重置抽签池</button>`;
+        }
+
+        // ========== 辅助功能 ==========
+        function resetPool() {
+            generatedNumbers.clear();
+            document.getElementById('result').innerHTML =
+                '<span style="color:#4CAF50">抽签池已重置！</span>';
+        }
+
+        // ========== 协议处理 ==========
+        let seconds = 10;
+        const timer = setInterval(() => {
+            seconds--;
+            document.getElementById('agreeBtn').innerHTML =
+                `请仔细阅读协议（剩余${seconds}秒）`;
+            if(seconds <= 0) {
+                clearInterval(timer);
+                document.getElementById('agreeBtn').disabled = false;
+                document.getElementById('agreeBtn').innerHTML = "同意协议";
+            }
+        }, 1000);
+
+        document.getElementById('agreeBtn').onclick = () => {
+            document.getElementById('agreementContainer').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
