@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生日祝福</title>
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Pacifico&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .swiper-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .swiper-slide {
+            position: relative;
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+
+        .text-overlay {
+            position: absolute;
+            padding: 15px;
+            font-size: 2.8em;
+            text-align: center;
+            font-family: 'Dancing Script', cursive;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            animation: float 3s ease-in-out infinite;
+            white-space: nowrap;
+        }
+
+        /* 艺术字样式 */
+        .rainbow-text {
+            background: linear-gradient(90deg,
+                #ff0000 16.66%,
+                #ff7f00 16.66%, 33.32%,
+                #ffff00 33.32%, 49.98%,
+                #00ff00 49.98%, 66.64%,
+                #0000ff 66.64%, 83.3%,
+                #8b00ff 83.3%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));
+        }
+
+        .gold-text {
+            color: #FFD700;
+            text-shadow: 0 0 10px #FFD700,
+                         2px 2px 4px rgba(0, 0, 0, 0.5);
+            font-family: 'Pacifico', cursive;
+        }
+
+        .neon-text {
+            color: #fff;
+            text-shadow: 0 0 5px #fff,
+                         0 0 10px #ff00de,
+                         0 0 20px #ff00de;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .stroke-text {
+            color: white;
+            -webkit-text-stroke: 2px #000;
+            text-shadow: 3px 3px 0 #000;
+        }
+
+        /* 动画效果 */
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px #fff; }
+            50% { text-shadow: 0 0 20px #ff00de, 0 0 30px #ff00de; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        #music-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+
+        #music-player:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="swiper-container">
+        <div class="swiper-wrapper"></div>
+        <div class="swiper-pagination"></div>
+    </div>
+
+    <div id="music-player"></div>
+
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <script>
+        // ================= 配置区域 =================
+        // 照片配置（可无限添加）
+        const photos = [
+            {
+                url: 'image/b94e4c95974a60d6f84b049caea4e9ba.JPG', // 替换为实际图片URL
+                texts: [
+                    {
+                        content: 'Happy Birthday! 🎉',
+                        position: { top: '20%', left: '50%', transform: 'translateX(-50%)' },
+                        style: 'rainbow-text'
+                    },
+                    {
+                        content: '🎂 岁岁平安 🎂',
+                        position: { bottom: '25%', right: '10%' },
+                        style: 'gold-text'
+                    }
+                ]
+            },
+            {
+                url: 'image/mmexport1739606757462.jpg',
+                texts: [
+                    {
+                        content: '❤️ 永远十八岁 ❤️',
+                        position: { top: '40%', left: '50%', transform: 'translateX(-50%)' },
+                        style: 'neon-text'
+                    }
+                ]
+            }
+        ];
+
+        // 音乐配置（可无限添加）
+        const musicList = [
+            { id: '1396028550', weight: 3 }, // 示例：网易云歌曲ID
+            { id: '歌曲ID2', weight: 1 }
+        ];
+        // ================= 配置结束 =================
+
+        // 动态生成轮播内容
+        const swiperWrapper = document.querySelector('.swiper-wrapper');
+        photos.forEach(photo => {
+            const slide = document.createElement('div');
+            slide.className = 'swiper-slide';
+            slide.style.backgroundImage = `url('${photo.url}')`;
+
+            photo.texts.forEach(text => {
+                const textDiv = document.createElement('div');
+                textDiv.className = `text-overlay ${text.style || ''}`;
+                Object.entries(text.position).forEach(([prop, value]) => {
+                    textDiv.style[prop] = value;
+                });
+                textDiv.innerHTML = text.content;
+                slide.appendChild(textDiv);
+            });
+
+            swiperWrapper.appendChild(slide);
+        });
+
+        // 初始化轮播
+        const swiper = new Swiper('.swiper-container', {
+            direction: 'vertical',
+            mousewheel: true,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true
+            },
+            effect: 'creative',
+            creativeEffect: {
+                prev: {
+                    translate: [0, '-100%', 0],
+                    opacity: 0,
+                    scale: 0.8
+                },
+                next: {
+                    translate: [0, '100%', 0],
+                    opacity: 0,
+                    scale: 0.8
+                }
+            },
+            speed: 1200,
+            autoplay: {
+                delay: 8000,
+                disableOnInteraction: false
+            },
+            preloadImages: true,
+            updateOnImagesReady: true
+        });
+
+        // 随机音乐播放
+        function getRandomMusic() {
+            const weightedList = [];
+            musicList.forEach(song => {
+                for (let i = 0; i < song.weight; i++) {
+                    weightedList.push(song.id);
+                }
+            });
+            const randomId = weightedList[Math.floor(Math.random() * weightedList.length)];
+            return `https://music.163.com/outchain/player?type=2&id=${randomId}&auto=1&height=90`;
+        }
+
+        // 初始化音乐播放器
+        document.getElementById('music-player').innerHTML = `
+            <iframe
+                frameborder="no"
+                border="0"
+                marginwidth="0"
+                marginheight="0"
+                width=300
+                height=90
+                src="${getRandomMusic()}">
+            </iframe>`;
+
+        // 图片加载监控
+        swiper.on('imagesReady', () => {
+            console.log('所有图片加载完成');
+        });
+    </script>
+</body>
+</html>

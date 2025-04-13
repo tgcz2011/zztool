@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生日祝福</title>
+    <!-- 引入Swiper轮播库 -->
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .swiper-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .swiper-slide {
+            position: relative;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .text-overlay {
+            position: absolute;
+            max-width: 80%;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 24px;
+            border-radius: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #music-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        #music-player:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- 轮播容器 -->
+    <div class="swiper-container">
+        <div class="swiper-wrapper">
+            <!-- 在此添加照片 -->
+            <!-- 示例照片配置 -->
+            <div class="swiper-slide" style="background-image: url('照片1.jpg')">
+                <div class="text-overlay" style="top: 20%; left: 10%">
+                    Happy Birthday! ❤️
+                </div>
+            </div>
+            <div class="swiper-slide" style="background-image: url('照片2.jpg')">
+                <div class="text-overlay" style="bottom: 20%; right: 10%">
+                    永远幸福快乐！
+                </div>
+            </div>
+        </div>
+        <!-- 分页器 -->
+        <div class="swiper-pagination"></div>
+    </div>
+
+    <!-- 音乐播放器 -->
+    <div id="music-player"></div>
+
+    <!-- 引入依赖库 -->
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <script>
+        // ================= 配置区域 =================
+        // 照片配置（可无限添加）
+        const photos = [
+            {
+                url: 'image/b94e4c95974a60d6f84b049caea4e9ba.jpg', // 替换为你的照片URL
+                texts: [
+                    { content: 'Happy Birthday! ❤️', top: '20%', left: '10%' },
+                    // 可添加多个文案层
+                ]
+            },
+            // 添加更多照片...
+        ];
+
+        // 音乐配置（可无限添加）
+        const musicList = [
+            { id: '1396028550', weight: 3 }, // weight是播放权重（数字越大播放概率越高）
+            { id: '歌曲ID2', weight: 1 },
+            // 添加更多音乐...
+        ];
+        // ================= 配置结束 =================
+
+        // 初始化轮播
+        const swiper = new Swiper('.swiper-container', {
+            direction: 'vertical',
+            mousewheel: true,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true
+            },
+            effect: 'creative',
+            creativeEffect: {
+                prev: {
+                    translate: [0, '-100%', 0],
+                    opacity: 0
+                },
+                next: {
+                    translate: [0, '100%', 0],
+                    opacity: 0
+                }
+            },
+            speed: 1000,
+            autoplay: {
+                delay: 5000,
+            }
+        });
+
+        // 随机音乐播放
+        function getRandomMusic() {
+            const weightedList = [];
+            musicList.forEach(song => {
+                for (let i = 0; i < song.weight; i++) {
+                    weightedList.push(song.id);
+                }
+            });
+            const randomId = weightedList[Math.floor(Math.random() * weightedList.length)];
+            return `https://music.163.com/outchain/player?type=2&id=${randomId}&auto=1&height=90`;
+        }
+
+        // 初始化音乐播放器
+        document.getElementById('music-player').innerHTML = `
+            <iframe
+                frameborder="no"
+                border="0"
+                marginwidth="0"
+                marginheight="0"
+                width=300
+                height=90
+                src="${getRandomMusic()}">
+            </iframe>`;
+    </script>
+</body>
+</html>
