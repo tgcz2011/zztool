@@ -2,16 +2,9 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>名言警句展示</title>
+    <title>豆语</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500&family=Ma+Shan+Zheng&display=swap');
-
-        /* 英文字体设置 */
-        @font-face {
-            font-family: 'ES Garamond';
-            src: local('Segoe UI'), local('Helvetica Neue');
-            unicode-range: U+0000-00FF;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500&family=Ma+Shan+Zheng&display=swap');
 
         body {
             margin: 0;
@@ -22,7 +15,14 @@
             background: url('/image/background.png') center/cover no-repeat;
             perspective: 1000px;
             overflow: hidden;
-            font-family: 'ES Garamond', 'Ma Shan Zheng', cursive;
+            font-family:
+                'EB Garamond',
+                'Ma Shan Zheng',
+                cursive;
+        }
+
+        :lang(zh) {
+            font-family: 'Ma Shan Zheng', 'EB Garamond', cursive;
         }
 
         .quote-container {
@@ -53,12 +53,14 @@
             line-height: 1.6;
             white-space: pre-line;
             margin-bottom: 15px;
+            letter-spacing: 0.03em;
         }
 
         .author {
             font-size: 1.6em;
             color: #FFE082;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-style: italic;
         }
 
         .nav-arrow {
@@ -96,6 +98,7 @@
         let currentIndex = 0;
         let autoChange = true;
         let boxes = document.querySelectorAll('.quote-box');
+        let history = [];
 
         function parseQuotes(text) {
             return text.split('##').filter(q => q.trim()).map(quote => {
@@ -107,43 +110,74 @@
             });
         }
 
+        function getRandomIndex() {
+            if (quotes.length <= 1) return 0;
+
+            // 历史记录保留最近3次
+            if(history.length > 3) history.shift();
+
+            let candidates = quotes
+                .map((_, i) => i)
+                .filter(i => i !== currentIndex && !history.includes(i));
+
+            // 如果没有候选则重置历史
+            if(candidates.length === 0) {
+                history = [];
+                candidates = quotes.map((_, i) => i).filter(i => i !== currentIndex);
+            }
+
+            const newIndex = candidates[Math.floor(Math.random() * candidates.length)];
+            history.push(newIndex);
+            return newIndex;
+        }
+
+        function switchToIndex(newIndex) {
+            autoChange = false;
+            currentIndex = newIndex;
+
+            const activeBox = document.querySelector('.quote-box.active');
+            const nextBox = activeBox === boxes[0] ? boxes[1] : boxes[0];
+
+            nextBox.querySelector('.content').textContent = quotes[currentIndex].content;
+            nextBox.querySelector('.author').textContent = quotes[currentIndex].author;
+
+            activeBox.classList.remove('active');
+            nextBox.classList.add('active');
+
+            setTimeout(() => autoChange = true, 2500);
+        }
+
+        function changeQuote(direction) {
+            const newIndex = (currentIndex + direction + quotes.length) % quotes.length;
+            switchToIndex(newIndex);
+        }
+
+        function randomChange() {
+            if (!autoChange) return;
+            switchToIndex(getRandomIndex());
+        }
+
         async function init() {
             const response = await fetch('/text/sb.txt');
             const text = await response.text();
             quotes = parseQuotes(text);
 
             // 立即显示第一条
-            updateContent(boxes[0], quotes[0]);
+            boxes[0].querySelector('.content').textContent = quotes[0].content;
+            boxes[0].querySelector('.author').textContent = quotes[0].author;
             boxes[0].classList.add('active');
 
-            // 自动切换
-            setInterval(() => {
-                if(autoChange) changeQuote(1);
-            }, 5000);
+            // 启动智能随机轮播
+            setInterval(randomChange, 5000);
         }
 
-        function updateContent(box, data) {
-            box.querySelector('.content').textContent = data.content;
-            box.querySelector('.author').textContent = data.author;
-        }
-
-        function changeQuote(direction) {
-            autoChange = false;
-            currentIndex = (currentIndex + direction + quotes.length) % quotes.length;
-
-            const activeBox = document.querySelector('.quote-box.active');
-            const nextBox = activeBox === boxes[0] ? boxes[1] : boxes[0];
-
-            updateContent(nextBox, quotes[currentIndex]);
-            activeBox.classList.remove('active');
-            nextBox.classList.add('active');
-
-            setTimeout(() => autoChange = true, 5000);
-        }
-
-        // 绑定翻页事件
+        // 事件绑定
         document.querySelector('.prev').addEventListener('click', () => changeQuote(-1));
         document.querySelector('.next').addEventListener('click', () => changeQuote(1));
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowLeft') changeQuote(-1);
+            if(e.key === 'ArrowRight') changeQuote(1);
+        });
 
         init().catch(console.error);
     </script>
