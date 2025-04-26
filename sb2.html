@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>豆语</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap');
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: url('/image/background.png') center/cover no-repeat;
+            perspective: 1000px;
+            overflow: hidden;
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+
+        .quote-container {
+            position: relative;
+            width: 80%;
+            max-width: 800px;
+            min-height: 300px;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .quote-box {
+            position: absolute;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(50px) rotateX(45deg);
+            transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+            text-align: center;
+        }
+
+        .quote-box.active {
+            opacity: 1;
+            transform: translateY(0) rotateX(0);
+        }
+
+        .content {
+            font-size: 2.2em;
+            line-height: 1.6;
+            white-space: pre-line;
+            margin-bottom: 15px;
+        }
+
+        .author {
+            font-size: 1.6em;
+            color: #FFE082;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .nav-arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 3em;
+            color: #FFE082;
+            cursor: pointer;
+            text-shadow: 0 0 15px rgba(0,0,0,0.5);
+            user-select: none;
+        }
+
+        .prev { left: 30px; }
+        .next { right: 30px; }
+    </style>
+</head>
+<body>
+    <div class="nav-arrow prev">‹</div>
+    <div class="nav-arrow next">›</div>
+
+    <div class="quote-container">
+        <div class="quote-box active">
+            <div class="content"></div>
+            <div class="author"></div>
+        </div>
+        <div class="quote-box">
+            <div class="content"></div>
+            <div class="author"></div>
+        </div>
+    </div>
+
+    <script>
+        let quotes = [];
+        let currentIndex = 0;
+        let autoChange = true;
+        let boxes = document.querySelectorAll('.quote-box');
+
+        function parseQuotes(text) {
+            return text.split('##').filter(q => q.trim()).map(quote => {
+                const lines = quote.trim().split('\n').filter(l => l.trim());
+                return {
+                    content: lines.slice(0, -1).join('\n'),
+                    author: lines[lines.length-1].replace(/^[——]+/, '').trim()
+                };
+            });
+        }
+
+        async function init() {
+            const response = await fetch('/text/sb.txt');
+            const text = await response.text();
+            quotes = parseQuotes(text);
+
+            // 立即显示第一条
+            updateContent(boxes[0], quotes[0]);
+            boxes[0].classList.add('active');
+
+            // 自动切换
+            setInterval(() => {
+                if(autoChange) changeQuote(1);
+            }, 5000);
+        }
+
+        function updateContent(box, data) {
+            box.querySelector('.content').textContent = data.content;
+            box.querySelector('.author').textContent = data.author;
+        }
+
+        function changeQuote(direction) {
+            autoChange = false;
+            currentIndex = (currentIndex + direction + quotes.length) % quotes.length;
+
+            const activeBox = document.querySelector('.quote-box.active');
+            const nextBox = activeBox === boxes[0] ? boxes[1] : boxes[0];
+
+            updateContent(nextBox, quotes[currentIndex]);
+            activeBox.classList.remove('active');
+            nextBox.classList.add('active');
+
+            setTimeout(() => autoChange = true, 5000);
+        }
+
+        // 绑定翻页事件
+        document.querySelector('.prev').addEventListener('click', () => changeQuote(-1));
+        document.querySelector('.next').addEventListener('click', () => changeQuote(1));
+
+        init().catch(console.error);
+    </script>
+</body>
+</html>
