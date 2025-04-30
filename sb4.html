@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>豆语</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500&family=Ma+Shan+Zheng&display=swap');
+
+        :root {
+            --gold: #FFE082;
+            --shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: url('image/background.png') center/cover no-repeat;
+            perspective: 1000px;
+            overflow: hidden;
+            font-family: 'EB Garamond', 'Ma Shan Zheng', cursive;
+            touch-action: pan-y;
+        }
+
+        :lang(zh) {
+            font-family: 'Ma Shan Zheng', 'EB Garamond', cursive;
+        }
+
+        .quote-container {
+            position: relative;
+            width: 90%;
+            max-width: 800px;
+            min-height: 200px;
+            color: #fff;
+            text-shadow: var(--shadow);
+            padding: 20px 0;
+        }
+
+        .quote-box {
+            position: absolute;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(30px) rotateX(25deg);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            text-align: center;
+            will-change: transform, opacity;
+        }
+
+        .quote-box.active {
+            opacity: 1;
+            transform: translateY(0) rotateX(0);
+        }
+
+        .content {
+            font-size: clamp(1.5rem, 6vw, 2.2rem);
+            line-height: 1.5;
+            white-space: pre-line;
+            margin-bottom: 10px;
+            letter-spacing: 0.02em;
+            padding: 0 15px;
+        }
+
+        .author {
+            font-size: clamp(1.1rem, 4.5vw, 1.6rem);
+            color: var(--gold);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .quote-container {
+                width: 95%;
+                min-height: 150px;
+            }
+
+            body {
+                perspective: 500px;
+            }
+
+            .quote-box {
+                transform: translateY(20px) rotateX(15deg);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content {
+                line-height: 1.4;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quote-container">
+        <div class="quote-box active">
+            <div class="content"></div>
+            <div class="author"></div>
+        </div>
+        <div class="quote-box">
+            <div class="content"></div>
+            <div class="author"></div>
+        </div>
+    </div>
+
+<script>
+    let quotes = [];
+    let currentIndex = 0;
+    let boxes = document.querySelectorAll('.quote-box');
+    let touchStartX = 0;
+    const touchThreshold = 50;
+    let autoTimer = null;
+
+    // 新增状态变量
+    let usedIndices = [];  // 记录已使用的索引
+    let history = [];      // 近期历史记录
+
+    // 数据解析
+    function parseQuotes(text) {
+        return text.split('##').filter(q => q.trim()).map(quote => {
+            const lines = quote.trim().split('\n').filter(l => l.trim());
+            return {
+                content: lines.slice(0, -1).join('\n'),
+                author: lines[lines.length-1].replace(/^[——]+/, '').trim()
+            };
+        });
+    }
+
+    // 改进的智能随机算法
+    function getRandomIndex() {
+        if (quotes.length <= 1) return currentIndex;
+
+        // 当所有索引都使用过时重置
+        if (usedIndices.length >= quotes.length) {
+            usedIndices = [];
+            history = [];
+        }
+
+        // 生成候选列表：未使用的索引 + 不在近期历史中
+        let candidates = quotes
+            .map((_, i) => i)
+            .filter(i =>
+                !usedIndices.includes(i) &&
+                i !== currentIndex &&
+                !history.includes(i)
+            );
+
+        // 如果候选为空，放宽限制（允许使用已用索引）
+        if (candidates.length === 0) {
+            candidates = quotes
+                .map((_, i) => i)
+                .filter(i => i !== currentIndex);
+        }
+
+        // 随机选择并更新记录
+        const newIndex = candidates[Math.floor(Math.random() * candidates.length)];
+        history = [...history.slice(-1), newIndex]; // 只保留最近1条历史
+        return newIndex;
+    }
+
+    // 改进的切换逻辑
+    function switchToIndex(newIndex) {
+        if(newIndex === currentIndex) return;
+
+        // 更新使用记录
+        if (!usedIndices.includes(newIndex)) {
+            usedIndices.push(newIndex);
+        }
+
+        currentIndex = newIndex;
+        const [activeBox, nextBox] = document.querySelector('.quote-box.active') === boxes[0]
+            ? [boxes[0], boxes[1]]
+            : [boxes[1], boxes[0]];
+
+        nextBox.querySelector('.content').textContent = quotes[currentIndex].content;
+        nextBox.querySelector('.author').textContent = quotes[currentIndex].author;
+
+        activeBox.classList.remove('active');
+        nextBox.classList.add('active');
+
+        // 重置自动切换定时器
+        clearTimeout(autoTimer);
+        autoTimer = setTimeout(randomChange, 2500);
+    }
+
+    // 事件处理函数
+    function handleSwipe(deltaX) {
+        if (Math.abs(deltaX) > touchThreshold) {
+            deltaX > 0 ? changeQuote(-1) : changeQuote(1);
+        }
+    }
+
+    function changeQuote(direction) {
+        const newIndex = (currentIndex + direction + quotes.length) % quotes.length;
+        // 手动切换时也更新使用记录
+        if (!usedIndices.includes(newIndex)) {
+            usedIndices.push(newIndex);
+        }
+        switchToIndex(newIndex);
+    }
+
+    function randomChange() {
+        switchToIndex(getRandomIndex());
+    }
+
+    // 初始化函数
+    async function init() {
+        try {
+            const response = await fetch('/text/sb.txt');
+            if (!response.ok) throw new Error(`HTTP错误 ${response.status}`);
+
+            const text = await response.text();
+            quotes = parseQuotes(text);
+
+            if (quotes.length === 0) throw new Error('未找到有效名言');
+
+            // 初始化显示
+            boxes[0].querySelector('.content').textContent = quotes[0].content;
+            boxes[0].querySelector('.author').textContent = quotes[0].author;
+            boxes[0].classList.add('active');
+            usedIndices.push(0);  // 记录初始索引
+
+            // 启动初始定时器
+            autoTimer = setTimeout(randomChange, 2500);
+            console.log('初始化完成，共加载', quotes.length, '条名言');
+
+        } catch (error) {
+            console.error('初始化失败:', error);
+            const container = document.querySelector('.quote-container');
+            container.innerHTML = `<div class="error">加载失败: ${error.message}</div>`;
+        }
+    }
+
+    // 事件绑定函数
+    function bindEvents() {
+        // 键盘事件
+        document.addEventListener('keydown', (e) => {
+            const key = e.key || e.code;
+            switch(true) {
+                case key === 'ArrowLeft' || key === 'Left' || e.keyCode === 37:
+                    e.preventDefault();
+                    changeQuote(-1);
+                    break;
+                case key === 'ArrowRight' || key === 'Right' || e.keyCode === 39:
+                    e.preventDefault();
+                    changeQuote(1);
+                    break;
+            }
+        });
+
+        // 触摸事件
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+        });
+
+        document.addEventListener('touchend', e => {
+            const deltaX = e.changedTouches[0].clientX - touchStartX;
+            handleSwipe(deltaX);
+        });
+
+        document.body.addEventListener('touchmove', e => {
+            if(Math.abs(e.touches[0].clientX - touchStartX) > 10) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+
+    // 启动程序
+    document.addEventListener('DOMContentLoaded', () => {
+        document.body.tabIndex = 0;
+        document.body.focus();
+        bindEvents();
+        init();
+    });
+
+    // 错误样式
+    const style = document.createElement('style');
+    style.textContent = `
+        .error {
+            color: #ff4444;
+            font-size: 1.2em;
+            text-align: center;
+            padding: 20px;
+            border: 2px solid #ff4444;
+            border-radius: 5px;
+            background: rgba(255, 68, 68, 0.1);
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+</body>
+</html>
