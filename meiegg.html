@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <link rel="icon" href="image/logo/zztool.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>渣渣工具站 beta</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .alert-bar {
+            background: #ffd700;
+            padding: 0.8rem;
+            text-align: center;
+            display: none;
+            position: relative;
+        }
+
+        .alert-close {
+            position: absolute;
+            right: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .navbar {
+            background: #2c3e50;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-title {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-size: 1rem;
+        }
+
+        .nav-menu a:hover {
+            color: #3498db;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            padding: 1rem;
+        }
+
+        .tool-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tool-card h2 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .tool-card p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .color-tag {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            margin-bottom: 1rem;
+        }
+
+        .section-divider {
+            border: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #2c3e50 50%, transparent);
+            margin: 3rem auto;
+            width: 80%;
+        }
+
+        .section-title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .section-title::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: #3498db;
+        }
+
+        .game-card .color-tag {
+            background: #9b59b6 !important;
+        }
+
+        @media (max-width: 768px) {
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            .nav-menu {
+                flex-wrap: wrap;
+                gap: 1rem;
+                justify-content: center;
+            }
+            .section-divider {
+                width: 90%;
+                margin: 2rem auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="alert-bar" id="alertBar">
+        <span id="alertText"></span>
+        <span class="alert-close" onclick="closeAlert()">×</span>
+    </div>
+
+    <nav class="navbar">
+        <a href="/" class="nav-title">渣渣工具站</a>
+        <ul class="nav-menu" id="navMenu"></ul>
+    </nav>
+
+    <div class="container">
+        <div class="tool-grid" id="toolContainer"></div>
+    </div>
+
+    <hr class="section-divider">
+    <div class="container">
+        <h2 class="section-title">游戏专栏</h2>
+        <div class="tool-grid" id="gameContainer"></div>
+    </div>
+
+    <script>
+        const menuItems = [
+            { text: "首页", url: "/" }, // 修正：补充第一个菜单项文本
+            { text: "联系我们", url: "/us.html" }
+        ];
+
+        const tools = [
+            {
+                title: "渣渣AI",
+                url: "/chat.html",
+                description: "一个基于Deepseek的简易AI",
+                color: "#e74c3c"
+            },
+            {
+                title: "磁力链接添加tracker",
+                url: "/addtracker.html",
+                description: "让你的磁力下载速度原地起飞",
+                color: "#3498db"
+            },
+            {
+                title: "删除#",
+                url: "/del.html",
+                description: "总有一天你需要删除文本中的所有#",
+                color: "#2ecc71"
+            },
+            {
+                title: "体育课",
+                url: "/ramdon.html",
+                description: "随机抽学号",
+                color: "#f39c12"
+            },
+            {
+                title: "豆语",
+                url: "/sb.html",
+                description: "许昊林冥言",
+                color: "#e67e22"
+            },
+        ];
+
+        const games = [
+            {
+                title: "2048",
+                url: "/game/2048.html",
+                description: "经典数字合并游戏",
+                color: "#9b59b6"
+            },
+            {
+                title: "俄罗斯方块",
+                url: "/game/tetris.html",
+                description: "永恒的方块挑战",
+                color: "#9b59b6"
+            },
+            {
+                title: "扫雷",
+                url: "/game/minesweeper.html",
+                description: "经典扫雷游戏",
+                color: "#9b59b6"
+            }
+        ];
+
+        const alertMessage = "此页面可能有部分错误，敬请谅解";
+
+        function initNavMenu() {
+            const menuContainer = document.getElementById('navMenu');
+            menuItems.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="${item.url}" aria-label="${item.text}">${item.text}</a>`;
+                menuContainer.appendChild(li);
+            });
+        }
+
+        function initAlert() {
+            const alertBar = document.getElementById('alertBar');
+            const alertText = document.getElementById('alertText');
+            if (alertMessage && alertMessage.trim()) {
+                alertText.textContent = alertMessage;
+                alertBar.style.display = 'block';
+            }
+        }
+
+        function closeAlert() {
+            document.getElementById('alertBar').style.display = 'none';
+        }
+
+        function createCard(container, items, isGame) {
+            items.forEach(item => {
+                const card = document.createElement('a');
+                card.href = item.url;
+                card.className = `tool-card ${isGame ? 'game-card' : ''}`;
+                card.innerHTML = `
+                    <div class="color-tag" style="background: ${item.color}"></div>
+                    <h2>${item.title}</h2>
+                    <p>${item.description}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function initTools() {
+            createCard(document.getElementById('toolContainer'), tools, false);
+        }
+
+        function initGames() {
+            createCard(document.getElementById('gameContainer'), games, true);
+        }
+
+        window.onload = function() {
+            initNavMenu();
+            initAlert();
+            initTools();
+            initGames();
+        };
+    </script>
+</body>
+</html>

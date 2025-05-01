@@ -253,7 +253,7 @@ function formatContent(text) {
 
 async function initKey() {
     try {
-        const res = await fetch('https://cdn.img2ipfs.com/ipfs/Qmdw2Hbdzq29SB1nTrC5oaPur43cBNgMGQSUTt8MQxFnH7');
+        const res = await fetch('text/key/deepseek.txt');
         const decoded = atob(atob(await res.text()));
         if (decoded.startsWith('sk-')) {
             apiKey = decoded;

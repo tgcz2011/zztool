@@ -70,37 +70,10 @@
             font-style: italic;
         }
 
-        .nav-arrow {
-            position: fixed;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: clamp(2rem, 8vw, 3rem);
-            color: var(--gold);
-            cursor: pointer;
-            text-shadow: var(--shadow);
-            user-select: none;
-            opacity: 0.8;
-            padding: 15px;
-            transition: opacity 0.3s;
-        }
-
-        .nav-arrow:hover {
-            opacity: 1;
-        }
-
-        .prev { left: 10px; }
-        .next { right: 10px; }
-
         @media (max-width: 768px) {
             .quote-container {
                 width: 95%;
                 min-height: 150px;
-            }
-
-            .nav-arrow {
-                font-size: 2.2rem;
-                padding: 10px;
-                backdrop-filter: blur(2px);
             }
 
             body {
@@ -116,17 +89,10 @@
             .content {
                 line-height: 1.4;
             }
-
-            .nav-arrow {
-                top: 60%;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="nav-arrow prev">‹</div>
-    <div class="nav-arrow next">›</div>
-
     <div class="quote-container">
         <div class="quote-box active">
             <div class="content"></div>
@@ -141,11 +107,14 @@
 <script>
     let quotes = [];
     let currentIndex = 0;
-    let autoChange = true;
     let boxes = document.querySelectorAll('.quote-box');
-    let history = [];
     let touchStartX = 0;
     const touchThreshold = 50;
+    let autoTimer = null;
+
+    // 新增状态变量
+    let usedIndices = [];  // 记录已使用的索引
+    let history = [];      // 近期历史记录
 
     // 数据解析
     function parseQuotes(text) {
@@ -158,27 +127,47 @@
         });
     }
 
-    // 智能随机算法
+    // 改进的智能随机算法
     function getRandomIndex() {
         if (quotes.length <= 1) return currentIndex;
 
-        history = history.slice(-3); // 保留最近3条记录
-        const candidates = quotes
+        // 当所有索引都使用过时重置
+        if (usedIndices.length >= quotes.length) {
+            usedIndices = [];
+            history = [];
+        }
+
+        // 生成候选列表：未使用的索引 + 不在近期历史中
+        let candidates = quotes
             .map((_, i) => i)
-            .filter(i => i !== currentIndex && !history.includes(i));
+            .filter(i =>
+                !usedIndices.includes(i) &&
+                i !== currentIndex &&
+                !history.includes(i)
+            );
 
-        if(candidates.length === 0) return (currentIndex + 1) % quotes.length;
+        // 如果候选为空，放宽限制（允许使用已用索引）
+        if (candidates.length === 0) {
+            candidates = quotes
+                .map((_, i) => i)
+                .filter(i => i !== currentIndex);
+        }
 
+        // 随机选择并更新记录
         const newIndex = candidates[Math.floor(Math.random() * candidates.length)];
-        history.push(newIndex);
+        history = [...history.slice(-1), newIndex]; // 只保留最近1条历史
         return newIndex;
     }
 
-    // 核心切换逻辑
+    // 改进的切换逻辑
     function switchToIndex(newIndex) {
         if(newIndex === currentIndex) return;
 
-        autoChange = false;
+        // 更新使用记录
+        if (!usedIndices.includes(newIndex)) {
+            usedIndices.push(newIndex);
+        }
+
         currentIndex = newIndex;
         const [activeBox, nextBox] = document.querySelector('.quote-box.active') === boxes[0]
             ? [boxes[0], boxes[1]]
@@ -190,7 +179,9 @@
         activeBox.classList.remove('active');
         nextBox.classList.add('active');
 
-        setTimeout(() => autoChange = true, 5000);
+        // 重置自动切换定时器
+        clearTimeout(autoTimer);
+        autoTimer = setTimeout(randomChange, 2500);
     }
 
     // 事件处理函数
@@ -202,11 +193,14 @@
 
     function changeQuote(direction) {
         const newIndex = (currentIndex + direction + quotes.length) % quotes.length;
+        // 手动切换时也更新使用记录
+        if (!usedIndices.includes(newIndex)) {
+            usedIndices.push(newIndex);
+        }
         switchToIndex(newIndex);
     }
 
     function randomChange() {
-        if (!autoChange) return;
         switchToIndex(getRandomIndex());
     }
 
@@ -225,9 +219,10 @@
             boxes[0].querySelector('.content').textContent = quotes[0].content;
             boxes[0].querySelector('.author').textContent = quotes[0].author;
             boxes[0].classList.add('active');
+            usedIndices.push(0);  // 记录初始索引
 
-            // 启动轮播
-            setInterval(randomChange, 5000);
+            // 启动初始定时器
+            autoTimer = setTimeout(randomChange, 2500);
             console.log('初始化完成，共加载', quotes.length, '条名言');
 
         } catch (error) {
@@ -239,25 +234,6 @@
 
     // 事件绑定函数
     function bindEvents() {
-        // 导航按钮
-        const prevBtn = document.querySelector('.prev');
-        const nextBtn = document.querySelector('.next');
-
-        if (!prevBtn || !nextBtn) {
-            console.error('导航按钮元素未找到');
-            return;
-        }
-
-        prevBtn.addEventListener('click', () => {
-            console.log('← 按钮点击');
-            changeQuote(-1);
-        });
-
-        nextBtn.addEventListener('click', () => {
-            console.log('→ 按钮点击');
-            changeQuote(1);
-        });
-
         // 键盘事件
         document.addEventListener('keydown', (e) => {
             const key = e.key || e.code;
@@ -292,15 +268,13 @@
 
     // 启动程序
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM加载完毕');
-        document.body.tabIndex = 0; // 使body可聚焦
+        document.body.tabIndex = 0;
         document.body.focus();
-
         bindEvents();
         init();
     });
 
-    // 错误样式（可选）
+    // 错误样式
     const style = document.createElement('style');
     style.textContent = `
         .error {
