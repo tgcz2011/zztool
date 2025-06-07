@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360°全景图在线预览器</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photo-sphere-viewer@4/dist/photo-sphere-viewer.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a4f, #0d1b2a);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .content {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .viewer-container {
+            flex: 1;
+            min-width: 300px;
+            min-height: 500px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        #panorama {
+            width: 100%;
+            height: 100%;
+            min-height: 500px;
+        }
+
+        .control-panel {
+            width: 320px;
+            background: rgba(20, 30, 48, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #4facfe;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title i {
+            font-size: 1.6rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #4facfe;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 25px;
+            background: rgba(15, 25, 40, 0.5);
+        }
+
+        .upload-area:hover {
+            background: rgba(25, 45, 70, 0.5);
+            border-color: #00f2fe;
+        }
+
+        .upload-area i {
+            font-size: 3rem;
+            color: #4facfe;
+            margin-bottom: 15px;
+        }
+
+        .upload-area p {
+            margin: 10px 0;
+            font-size: 0.95rem;
+            opacity: 0.8;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .samples {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .sample-img {
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            aspect-ratio: 16/9;
+        }
+
+        .sample-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .sample-img:hover img {
+            transform: scale(1.05);
+        }
+
+        .sample-img::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            transition: background 0.3s ease;
+        }
+
+        .sample-img:hover::after {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .controls {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group h3 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #00f2fe;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #00f2fe;
+            cursor: pointer;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .instructions {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #4facfe;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+            margin: 10px 0;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+            }
+
+            .control-panel {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>360°全景图在线预览器</h1>
+            <p class="subtitle">基于Photo Sphere Viewer.js构建的全功能全景图预览工具。上传您自己的全景图像或从示例库中选择，体验沉浸式360°浏览效果。</p>
+        </header>
+
+        <div class="content">
+            <div class="viewer-container">
+                <div id="panorama"></div>
+            </div>
+
+            <div class="control-panel">
+                <h2 class="panel-title"><i class="fas fa-cogs"></i> 控制面板</h2>
+
+                <div class="upload-area" id="upload-area">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>上传全景图</h3>
+                    <p>点击或拖放全景图像文件到此处</p>
+                    <p class="small">支持JPG/PNG格式，推荐2:1宽高比</p>
+                    <input type="file" id="file-input" accept="image/jpeg,image/png">
+                </div>
+
+                <button class="btn secondary" id="reset-btn">
+                    <i class="fas fa-sync-alt"></i> 重置视图
+                </button>
+
+                <h3 style="margin: 25px 0 15px;">示例全景图:</h3>
+                <div class="samples">
+                    <div class="sample-img" data-src="https://photo-sphere-viewer-data.netlify.app/assets/sphere.jpg">
+                        <img src="https://photo-sphere-viewer-data.netlify.app/assets/sphere.jpg" alt="山脉全景">
+                        <div style="position:absolute; bottom:10px; left:10px; color:white; z-index:10">山脉全景</div>
+                    </div>
+                    <div class="sample-img" data-src="https://photo-sphere-viewer-data.netlify.app/assets/potala-palace.jpg">
+                        <img src="https://photo-sphere-viewer-data.netlify.app/assets/potala-palace.jpg" alt="布达拉宫">
+                        <div style="position:absolute; bottom:10px; left:10px; color:white; z-index:10">布达拉宫</div>
+                    </div>
+                    <div class="sample-img" data-src="https://photo-sphere-viewer-data.netlify.app/assets/chess.jpg">
+                        <img src="https://photo-sphere-viewer-data.netlify.app/assets/chess.jpg" alt="国际象棋">
+                        <div style="position:absolute; bottom:10px; left:10px; color:white; z-index:10">国际象棋</div>
+                    </div>
+                    <div class="sample-img" data-src="https://photo-sphere-viewer-data.netlify.app/assets/above-the-clouds.jpg">
+                        <img src="https://photo-sphere-viewer-data.netlify.app/assets/above-the-clouds.jpg" alt="云海之上">
+                        <div style="position:absolute; bottom:10px; left:10px; color:white; z-index:10">云海之上</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <h2 class="panel-title"><i class="fas fa-sliders-h"></i> 显示设置</h2>
+
+                    <div class="control-group">
+                        <h3>移动速度</h3>
+                        <div class="slider-container">
+                            <input type="range" id="move-speed" min="1" max="20" value="5">
+                            <div class="slider-value" id="move-speed-value">5</div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>缩放级别</h3>
+                        <div class="slider-container">
+                            <input type="range" id="zoom-level" min="0" max="100" value="50">
+                            <div class="slider-value" id="zoom-level-value">50</div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>其他设置</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="autorotate" checked>
+                            <label for="autorotate">自动旋转</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="mouse-wheel" checked>
+                            <label for="mouse-wheel">启用鼠标滚轮缩放</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="instructions">
+                    <h3>使用说明：</h3>
+                    <ul>
+                        <li>使用鼠标拖拽可以旋转全景视图</li>
+                        <li>鼠标滚轮可以缩放视图</li>
+                        <li>双击可以放大特定区域</li>
+                        <li>使用右侧控制面板调整查看参数</li>
+                        <li>上传您自己的全景图或选择示例图片</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2023 全景图在线预览器 | 基于Photo Sphere Viewer.js构建</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uevent@2.0.0/browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/photo-sphere-viewer@4/dist/photo-sphere-viewer.min.js"></script>
+
+    <script>
+        // 初始化全景查看器
+        let viewer;
+
+        // 默认全景图
+        const defaultPanorama = 'https://photo-sphere-viewer-data.netlify.app/assets/sphere.jpg';
+
+        // 初始化全景查看器
+        function initViewer(panorama) {
+            // 如果已经存在查看器，先销毁
+            if (viewer) {
+                viewer.destroy();
+            }
+
+            viewer = new PhotoSphereViewer.Viewer({
+                container: document.querySelector('#panorama'),
+                panorama: panorama,
+                caption: '360°全景图预览',
+                loadingImg: 'https://photo-sphere-viewer.js.org/assets/photosphere-logo.gif',
+                defaultZoomLvl: 50,
+                moveSpeed: 5,
+                autorotateDelay: 1000,
+                autorotateSpeed: '1rpm',
+                mousewheel: true,
+                navbar: [
+                    'autorotate',
+                    'zoom',
+                    'caption',
+                    'fullscreen'
+                ]
+            });
+
+            // 添加事件监听器
+            addEventListeners();
+        }
+
+        // 添加事件监听器
+        function addEventListeners() {
+            // 文件上传
+            document.getElementById('upload-area').addEventListener('click', () => {
+                document.getElementById('file-input').click();
+            });
+
+            document.getElementById('file-input').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        initViewer(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // 示例图片点击
+            document.querySelectorAll('.sample-img').forEach(img => {
+                img.addEventListener('click', function() {
+                    const src = this.getAttribute('data-src');
+                    initViewer(src);
+                });
+            });
+
+            // 重置视图
+            document.getElementById('reset-btn').addEventListener('click', function() {
+                viewer.reset();
+                viewer.rotate({longitude: 0, latitude: 0});
+                viewer.zoom(50);
+            });
+
+            // 移动速度控制
+            const moveSpeedSlider = document.getElementById('move-speed');
+            const moveSpeedValue = document.getElementById('move-speed-value');
+
+            moveSpeedSlider.addEventListener('input', function() {
+                const speed = parseInt(this.value);
+                moveSpeedValue.textContent = speed;
+                viewer.setOption('moveSpeed', speed);
+            });
+
+            // 缩放级别控制
+            const zoomLevelSlider = document.getElementById('zoom-level');
+            const zoomLevelValue = document.getElementById('zoom-level-value');
+
+            zoomLevelSlider.addEventListener('input', function() {
+                const zoom = parseInt(this.value);
+                zoomLevelValue.textContent = zoom;
+                viewer.zoom(zoom);
+            });
+
+            // 自动旋转
+            document.getElementById('autorotate').addEventListener('change', function() {
+                if (this.checked) {
+                    viewer.startAutorotate();
+                } else {
+                    viewer.stopAutorotate();
+                }
+            });
+
+            // 鼠标滚轮控制
+            document.getElementById('mouse-wheel').addEventListener('change', function() {
+                viewer.setOption('mousewheel', this.checked);
+            });
+
+            // 拖放功能
+            const uploadArea = document.getElementById('upload-area');
+
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#00f2fe';
+                uploadArea.style.backgroundColor = 'rgba(25, 45, 70, 0.5)';
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.borderColor = '#4facfe';
+                uploadArea.style.backgroundColor = 'rgba(15, 25, 40, 0.5)';
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#4facfe';
+                uploadArea.style.backgroundColor = 'rgba(15, 25, 40, 0.5)';
+
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.match('image.*')) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        initViewer(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('load', () => {
+            initViewer(defaultPanorama);
+        });
+    </script>
+</body>
+</html>

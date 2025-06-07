@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+    <title>系统诊断</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>全景地图系统诊断</h1>
+
+    <div class="test-section" id="dependencies">
+        <h2>1. 依赖库测试</h2>
+        <p>Leaflet 状态: <span id="leaflet-status">测试中...</span></p>
+        <p>Photo Sphere Viewer 状态: <span id="psv-status">测试中...</span></p>
+        <p>高德地图API 状态: <span id="amap-status">测试中...</span></p>
+    </div>
+
+    <div class="test-section" id="json-test">
+        <h2>2. 索引文件测试</h2>
+        <p>panorama_index.json 状态: <span id="json-status">测试中...</span></p>
+        <pre id="json-content"></pre>
+    </div>
+
+    <div class="test-section" id="file-test">
+        <h2>3. 文件路径测试</h2>
+        <div id="file-results"></div>
+    </div>
+
+    <div class="test-section" id="solution">
+        <h2>解决方案</h2>
+        <div id="solution-content"></div>
+    </div>
+
+    <!-- 高德地图API -->
+    <script type="text/javascript">
+        window._AMapSecurityConfig = {
+            securityJsCode: '您的安全密钥', // 可选
+        }
+    </script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_API_KEY"></script>
+
+    <!-- 其他依赖 -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/photo-sphere-viewer@4/dist/photo-sphere-viewer.min.js"></script>
+
+    <script>
+        // 1. 测试依赖库
+        function testDependencies() {
+            // 测试Leaflet
+            const leafletStatus = document.getElementById('leaflet-status');
+            if (typeof L === 'object') {
+                leafletStatus.textContent = '✅ 已加载';
+                leafletStatus.className = 'success';
+            } else {
+                leafletStatus.textContent = '❌ 加载失败';
+                leafletStatus.className = 'error';
+            }
+
+            // 测试Photo Sphere Viewer
+            const psvStatus = document.getElementById('psv-status');
+            if (typeof PhotoSphereViewer === 'function') {
+                psvStatus.textContent = '✅ 已加载';
+                psvStatus.className = 'success';
+            } else {
+                psvStatus.textContent = '❌ 加载失败';
+                psvStatus.className = 'error';
+            }
+
+            // 测试高德地图
+            const amapStatus = document.getElementById('amap-status');
+            if (typeof AMap === 'object') {
+                amapStatus.textContent = '✅ 已加载';
+                amapStatus.className = 'success';
+            } else {
+                amapStatus.textContent = '❌ 加载失败';
+                amapStatus.className = 'error';
+            }
+        }
+
+        // 2. 测试JSON文件
+        function testJSON() {
+            const jsonStatus = document.getElementById('json-status');
+            const jsonContent = document.getElementById('json-content');
+
+            fetch('panorama_index.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP错误! 状态: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    jsonStatus.textContent = '✅ 已加载';
+                    jsonStatus.className = 'success';
+                    jsonContent.textContent = JSON.stringify(data, null, 2);
+
+                    // 验证JSON结构
+                    if (data.length > 0 && data[0].path && data[0].gps) {
+                        jsonStatus.textContent += ' - 结构有效';
+                    } else {
+                        jsonStatus.textContent += ' - ⚠️ 结构可能无效';
+                        jsonStatus.className = 'warning';
+                    }
+                })
+                .catch(error => {
+                    jsonStatus.textContent = `❌ 加载失败: ${error.message}`;
+                    jsonStatus.className = 'error';
+                    jsonContent.textContent = '无法加载JSON文件';
+                });
+        }
+
+        // 3. 测试文件路径
+        function testFilePaths() {
+            const fileResults = document.getElementById('file-results');
+
+            fetch('panorama_index.json')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        fileResults.innerHTML = '<p>❌ JSON文件中没有全景图数据</p>';
+                        return;
+                    }
+
+                    // 测试前5个文件
+                    const testFiles = data.slice(0, 5);
+                    let testCount = 0;
+                    let successCount = 0;
+
+                    testFiles.forEach(file => {
+                        const fileItem = document.createElement('div');
+                        fileItem.innerHTML = `<p>测试文件: ${file.path} <span id="file-test-${testCount}">测试中...</span></p>`;
+                        fileResults.appendChild(fileItem);
+
+                        fetch(file.path)
+                            .then(response => {
+                                const statusElement = document.getElementById(`file-test-${testCount}`);
+                                if (response.ok) {
+                                    statusElement.textContent = '✅ 文件存在';
+                                    statusElement.className = 'success';
+                                    successCount++;
+                                } else {
+                                    statusElement.textContent = `❌ 文件不存在 (状态: ${response.status})`;
+                                    statusElement.className = 'error';
+                                }
+                            })
+                            .catch(error => {
+                                const statusElement = document.getElementById(`file-test-${testCount}`);
+                                statusElement.textContent = `❌ 访问失败: ${error.message}`;
+                                statusElement.className = 'error';
+                            });
+
+                        testCount++;
+                    });
+
+                    // 添加总结
+                    const summary = document.createElement('div');
+                    summary.innerHTML = `<p>测试结果: ${successCount}/${testCount} 个文件可访问</p>`;
+                    fileResults.appendChild(summary);
+                })
+                .catch(error => {
+                    fileResults.innerHTML = `<p>❌ 无法加载JSON文件: ${error.message}</p>`;
+                });
+        }
+
+        // 4. 提供解决方案
+        function provideSolutions() {
+            const solutionContent = document.getElementById('solution-content');
+            let solutionsHTML = '<h3>常见问题解决方案:</h3><ul>';
+
+            solutionsHTML += '<li><strong>浏览器控制台错误</strong>: 按F12打开开发者工具，查看Console标签页中的错误信息</li>';
+            solutionsHTML += '<li><strong>高德地图API密钥问题</strong>: 确保您已申请有效的高德API密钥并替换YOUR_AMAP_API_KEY</li>';
+            solutionsHTML += '<li><strong>跨域问题</strong>: 使用本地HTTP服务器而不是直接打开HTML文件</li>';
+            solutionsHTML += '<li><strong>文件路径问题</strong>: 确保所有文件都在同一目录下，路径大小写正确</li>';
+            solutionsHTML += '<li><strong>JSON格式问题</strong>: 使用 <a href="https://jsonformatter.org/" target="_blank">JSON验证器</a> 检查panorama_index.json</li>';
+            solutionsHTML += '</ul>';
+
+            solutionsHTML += '<h3>启动本地服务器的方法:</h3>';
+            solutionsHTML += '<pre># Python 3<br>python -m http.server<br><br># Node.js<br>npx http-server<br><br># PHP<br>php -S localhost:8000</pre>';
+
+            solutionsHTML += '<h3>最终解决方案:</h3>';
+            solutionsHTML += '<p>如果所有测试都通过但仍然无法加载，请尝试这个简化版的全景查看器：</p>';
+            solutionsHTML += '<pre>&lt;!DOCTYPE html&gt;\n&lt;html&gt;\n&lt;head&gt;\n  &lt;title&gt;简化版全景查看器&lt;/title&gt;\n  &lt;script src="https://cdn.jsdelivr.net/npm/photo-sphere-viewer@4/dist/photo-sphere-viewer.min.js"&gt;&lt;/script&gt;\n&lt;/head&gt;\n&lt;body&gt;\n  &lt;div id="viewer" style="width:100%; height:100vh"&gt;&lt;/div&gt;\n  &lt;script&gt;\n    const viewer = new PhotoSphereViewer.Viewer({\n      container: document.getElementById(\'viewer\'),\n      panorama: \'您的全景图路径.jpg\'\n    });\n  &lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;</pre>';
+
+            solutionContent.innerHTML = solutionsHTML;
+        }
+
+        // 运行所有测试
+        function runAllTests() {
+            testDependencies();
+            testJSON();
+            testFilePaths();
+            provideSolutions();
+        }
+
+        // 页面加载完成后运行测试
+        window.addEventListener('DOMContentLoaded', runAllTests);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云上外校</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photo-sphere-viewer@4/dist/photo-sphere-viewer.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://webapi.amap.com/maps?v=1.4.15&key=9bf761684fe66c70a222411108493d76"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0d1b2a, #1a2a4f);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            max-width: 900px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .content {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .map-section {
+            flex: 1;
+            min-width: 500px;
+            min-height: 700px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #map-container {
+            flex: 1;
+            height: 600px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .map-controls {
+            background: rgba(20, 30, 48, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .viewer-section {
+            flex: 1;
+            min-width: 500px;
+            min-height: 700px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .viewer-container {
+            flex: 1;
+            min-height: 600px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        #panorama {
+            width: 100%;
+            height: 100%;
+            min-height: 600px;
+        }
+
+        .control-panel {
+            background: rgba(20, 30, 48, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #4facfe;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title i {
+            font-size: 1.6rem;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .controls {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group h3 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #00f2fe;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #00f2fe;
+            cursor: pointer;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .instructions {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #4facfe;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+            margin: 10px 0;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .map-legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .info-window {
+            padding: 10px;
+            background: rgba(20, 30, 48, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            min-width: 200px;
+        }
+
+        .info-window h4 {
+            color: #4facfe;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .info-thumbnail {
+            width: 180px;
+            height: 120px;
+            border-radius: 8px;
+            margin: 10px 0;
+            background: #0d1b2a;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .info-details {
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+
+        .info-btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .info-btn:hover {
+            background: #3a9cec;
+        }
+
+        .photo-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            padding-right: 10px;
+        }
+
+        .photo-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .photo-item:hover {
+            background: rgba(79, 172, 254, 0.2);
+        }
+
+        .photo-thumb {
+            width: 60px;
+            height: 40px;
+            border-radius: 4px;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+        }
+
+        .photo-info {
+            flex: 1;
+        }
+
+        .photo-name {
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+        .photo-meta {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 1200px) {
+            .content {
+                flex-direction: column;
+            }
+
+            .map-section, .viewer-section {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>云上外小</h1>
+            <p class="subtitle">基于高德地图与Photo Sphere Viewer.js构建的全景图浏览系统。地图上标记了所有全景图的拍摄位置，点击标记点（点不准请放大）可查看对应全景图。</p>
+            <p class="subtitle">强烈建议先阅读页面右下角提示，本网站不支持移动端访问，请使用电脑访问。</p>
+        </header>
+
+        <div class="content">
+            <div class="map-section">
+                <div id="map-container"></div>
+
+                <div class="map-controls">
+                    <h2 class="panel-title"><i class="fas fa-map-marked-alt"></i> 地图控制</h2>
+                    <button class="btn" id="zoom-in-btn">
+                        <i class="fas fa-search-plus"></i> 放大
+                    </button>
+                    <button class="btn secondary" id="zoom-out-btn">
+                        <i class="fas fa-search-minus"></i> 缩小
+                    </button>
+                    <button class="btn secondary" id="reset-map-btn">
+                        <i class="fas fa-sync-alt"></i> 重置地图视图
+                    </button>
+
+                    <div class="map-legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #4facfe;"></div>
+                            <div>全景图位置</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #ff6b6b;"></div>
+                            <div>当前选择</div>
+                        </div>
+                    </div>
+
+                    <div class="photo-list" id="photo-list">
+                        <!-- 照片列表将通过JS动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="viewer-section">
+                <div class="viewer-container">
+                    <div id="panorama"></div>
+                </div>
+
+                <div class="control-panel">
+                    <h2 class="panel-title"><i class="fas fa-cogs"></i> 全景图控制</h2>
+
+                    <button class="btn secondary" id="reset-view-btn">
+                        <i class="fas fa-sync-alt"></i> 重置全景视图
+                    </button>
+
+                    <div class="controls">
+                        <h2 class="panel-title"><i class="fas fa-sliders-h"></i> 显示设置</h2>
+
+                        <div class="control-group">
+                            <h3>移动速度</h3>
+                            <div class="slider-container">
+                                <input type="range" id="move-speed" min="1" max="20" value="5">
+                                <div class="slider-value" id="move-speed-value">5</div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <h3>缩放级别</h3>
+                            <div class="slider-container">
+                                <input type="range" id="zoom-level" min="0" max="100" value="50">
+                                <div class="slider-value" id="zoom-level-value">50</div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <h3>其他设置</h3>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="autorotate" checked>
+                                <label for="autorotate">自动旋转</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="mouse-wheel" checked>
+                                <label for="mouse-wheel">启用鼠标滚轮缩放</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="instructions">
+                        <h3>使用说明：</h3>
+                        <ul>
+                            <li>地图上的蓝色标记表示全景图拍摄位置</li>
+                            <li>若点击时产生偏移，请先放大地图以使点击位置更准确</li>
+                            <li>点击地图标记或右侧照片列表查看全景图</li>
+                            <li>使用鼠标拖拽可以旋转全景视图</li>
+                            <li>鼠标滚轮可以缩放全景视图</li>
+                            <li>双击可以放大全景图特定区域</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>数据来源：ZZAJ | 基于©2025 高德地图、©2025 Netlify与Photo Sphere Viewer.js构建</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uevent@2.0.0/browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/photo-sphere-viewer@4/dist/photo-sphere-viewer.min.js"></script>
+
+    <script>
+        // 全景图索引数据
+        const panoramaData = [
+  {
+    "filename": "DJI_20250606135027_0267_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmWA4iXJZtPymYhrxS2sUQ9zgZyEhKhPWbY1VLDsWMvUix",
+    "thumbnail": "thumbnails/DJI_20250606135027_0267_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:50",
+    "gps": [
+      29.254916833333333,
+      120.24877413888889
+    ]
+  },
+  {
+    "filename": "DJI_20250606165707_0092_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmXNKHuSU7wzsYAVWGPAjqBuqECpwdaLFef2BWL9NZVryL",
+    "thumbnail": "thumbnails/DJI_20250606165707_0092_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:57",
+    "gps": [
+      29.254480555555556,
+      120.24774761111111
+    ]
+  },
+  {
+    "filename": "DJI_20250606140938_0273_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmWHEFkVGAmB62k4ZdtfQZYLLE1enFKU9v84xq7nEyYDBZ",
+    "thumbnail": "thumbnails/DJI_20250606140938_0273_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:09",
+    "gps": [
+      29.255200527777777,
+      120.24805
+    ]
+  },
+  {
+    "filename": "DJI_20250606164826_0089_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmUUrfdD3SSatAuADnnR2181Fbn4RmwxGygsE9F7oGbtRo",
+    "thumbnail": "thumbnails/DJI_20250606164826_0089_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:48",
+    "gps": [
+      29.254944555555557,
+      120.24905755555555
+    ]
+  },
+  {
+    "filename": "DJI_20250606141347_0275_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmZm9R7k9tBTiz6DgDF5kZz81G11moiNhaak5zqd5DsL9X",
+    "thumbnail": "thumbnails/DJI_20250606141347_0275_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:13",
+    "gps": [
+      29.254131861111112,
+      120.24806316666667
+    ]
+  },
+  {
+    "filename": "DJI_20250606153422_0079_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmYBAJ7bicyVXSyVMaAW2yL1sCnu4qo73YpEc1mjWKCQXu",
+    "thumbnail": "thumbnails/DJI_20250606153422_0079_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:34",
+    "gps": [
+      29.255636055555556,
+      120.24841075
+    ]
+  },
+  {
+    "filename": "DJI_20250606164749_0300_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmPvAFiT8DabjvKQYVBpwxZCxTiWQgR5xR1DDFxtLbyXNB",
+    "thumbnail": "thumbnails/DJI_20250606164749_0300_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:47",
+    "gps": [
+      29.255846166666668,
+      120.24746647222223
+    ]
+  },
+  {
+    "filename": "DJI_20250606133144_0058_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmRnQxkifQcxb8h9Lvarwr5C2EnBsfZ6c1CuJS3RNbBYzr",
+    "thumbnail": "thumbnails/DJI_20250606133144_0058_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:31",
+    "gps": [
+      29.254716694444443,
+      120.24914530555556
+    ]
+  },
+  {
+    "filename": "DJI_20250606154815_0085_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmVdxd7kv2avQs2icY3sWY2Te6eLKaB6WCYQWdmKq8QDwa",
+    "thumbnail": "thumbnails/DJI_20250606154815_0085_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:48",
+    "gps": [
+      29.254512166666668,
+      120.24975847222223
+    ]
+  },
+  {
+    "filename": "DJI_20250606153840_0081_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/Qmeac82oqkCmsRdrEusFEdYeACznsk7CyPfBbg89tXFiUP",
+    "thumbnail": "thumbnails/DJI_20250606153840_0081_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:38",
+    "gps": [
+      29.255349444444445,
+      120.2484516388889
+    ]
+  },
+  {
+    "filename": "DJI_20250606152429_0283_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmUY1ZgWTgBsgQBkLpWmYUPRGFzAV6MFqx5QhGTSS1sCVb",
+    "thumbnail": "thumbnails/DJI_20250606152429_0283_D.JPG",
+    "width": 8064,
+    "height": 6048,
+    "date_taken": "2025-06-06 15:24",
+    "gps": [
+      -0.0,
+      -0.0
+    ]
+  },
+  {
+    "filename": "DJI_20250606153242_0078_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmZbNaW629XTe9peYXHijZzNRiq7m5TMP5uL15S3BhcKnB",
+    "thumbnail": "thumbnails/DJI_20250606153242_0078_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:32",
+    "gps": [
+      29.255645666666666,
+      120.24847961111111
+    ]
+  },
+  {
+    "filename": "DJI_20250606135533_0269_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmTZFGM2fSvduwLBh2nQjuuJNFoxrG5HoKv9sHY1QtL7mm",
+    "thumbnail": "thumbnails/DJI_20250606135533_0269_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:55",
+    "gps": [
+      29.25475761111111,
+      120.24881644444444
+    ]
+  },
+  {
+    "filename": "DJI_20250606133249_0255_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmQ6c6Q4oUrLaeTKZ8MCyu3cz4sbvPA6pbBkn3eQXb8h4b",
+    "thumbnail": "thumbnails/DJI_20250606133249_0255_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:32",
+    "gps": [
+      29.254651555555554,
+      120.249108
+    ]
+  },
+  {
+    "filename": "DJI_20250606135620_0067_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmQtR4oe6A9M56XTGC3hmDwGTL1ufUjHnRf4tv2qpe4EKj",
+    "thumbnail": "thumbnails/DJI_20250606135620_0067_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:56",
+    "gps": [
+      29.25442577777778,
+      120.24883866666667
+    ]
+  },
+  {
+    "filename": "DJI_20250606163454_0087_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmZ4PFAGJ6hgKuZ2QfTDeyvoKCHFUp8oxiCA2Se2oXTyeu",
+    "thumbnail": "thumbnails/DJI_20250606163454_0087_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:34",
+    "gps": [
+      29.25639522222222,
+      120.24849258333333
+    ]
+  },
+  {
+    "filename": "DJI_20250606140606_0069_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmYFpv1VLmJSQFkjQ54T5cq8huzuovguPXNGEiUxXY8qbD",
+    "thumbnail": "thumbnails/DJI_20250606140606_0069_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:06",
+    "gps": [
+      29.254650444444444,
+      120.24852897222222
+    ]
+  },
+  {
+    "filename": "DJI_20250606163552_0297_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmY5TSqw6pyg1p8io6gWCWEcj8hNXmpxSmF5DM1q9o3wso",
+    "thumbnail": "thumbnails/DJI_20250606163552_0297_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:35",
+    "gps": [
+      29.254994166666666,
+      120.250018
+    ]
+  },
+  {
+    "filename": "DJI_20250606142243_0278_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmYvXDub53QPAes3vwfB4SBVfvciuVmWjPJTgRTztzXTLC",
+    "thumbnail": "thumbnails/DJI_20250606142243_0278_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:22",
+    "gps": [
+      29.25529827777778,
+      120.24847983333333
+    ]
+  },
+  {
+    "filename": "DJI_20250606154725_0295_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmXQVRjXDHngF4ViJjjhn9shxwu7GqUCEnTLRZSXfmR7kB",
+    "thumbnail": "thumbnails/DJI_20250606154725_0295_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:47",
+    "gps": [
+      29.25622961111111,
+      120.249307
+    ]
+  },
+  {
+    "filename": "DJI_20250606114025_0051_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmYFLgUfz1mmZx9fv7T9T5rPCH6C1TAZ5KAHJk6RLJ7a2p",
+    "thumbnail": "thumbnails/DJI_20250606114025_0051_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:40",
+    "gps": [
+      29.25520277777778,
+      120.24787405555556
+    ]
+  },
+  {
+    "filename": "DJI_20250606134150_0062_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmTGA69oJFcB7M8Q4ZfPhYVHh4ffzMLzixpQaa9954dPtU",
+    "thumbnail": "thumbnails/DJI_20250606134150_0062_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:41",
+    "gps": [
+      29.25604913888889,
+      120.24811983333333
+    ]
+  },
+  {
+    "filename": "DJI_20250606152853_0076_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmeWKem4zdj1e59Z5KmogRXXrmfq7c3seS82vDPsWU6vRS",
+    "thumbnail": "thumbnails/DJI_20250606152853_0076_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:28",
+    "gps": [
+      29.25592961111111,
+      120.24882075000001
+    ]
+  },
+  {
+    "filename": "DJI_20250606114414_0248_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmQoHj5843HP68p8XR9d9hxoKpEuQ65rgwcjup2hiYPUAy",
+    "thumbnail": "thumbnails/DJI_20250606114414_0248_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:44",
+    "gps": [
+      29.255608,
+      120.24759291666666
+    ]
+  },
+  {
+    "filename": "DJI_20250606115000_0251_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmfGb8kH647LMmhd1YudsqQjq8jyQr4FzYrPZrUDU7rNoW",
+    "thumbnail": "thumbnails/DJI_20250606115000_0251_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:50",
+    "gps": [
+      29.255715055555555,
+      120.24896069444445
+    ]
+  },
+  {
+    "filename": "DJI_20250606152213_0282_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmR2DnAuGCVnHYaovnFSCkGFsAPt1EzRQZnXaf1KiZTGgo",
+    "thumbnail": "thumbnails/DJI_20250606152213_0282_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:22",
+    "gps": [
+      -0.0,
+      -0.0
+    ]
+  },
+  {
+    "filename": "DJI_20250606153625_0289_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmZjxR9tXUHx6SDFMgzNeUD3mUTqDQLWQXw1DNCaXdEvua",
+    "thumbnail": "thumbnails/DJI_20250606153625_0289_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:36",
+    "gps": [
+      29.255031444444445,
+      120.24885922222222
+    ]
+  },
+  {
+    "filename": "DJI_20250606152921_0285_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmPueVSf8s925WTcPgiHgeyeqNXy1k2Fmf4dsaQwxiaTEb",
+    "thumbnail": "thumbnails/DJI_20250606152921_0285_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:29",
+    "gps": [
+      29.253862583333333,
+      120.24926358333333
+    ]
+  },
+  {
+    "filename": "DJI_20250606153813_0290_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmQvBbqEvMhQDDEAEVnf5eMrnxx1Usf8AuGUm4KKrVMtcC",
+    "thumbnail": "thumbnails/DJI_20250606153813_0290_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:38",
+    "gps": [
+      29.255377805555554,
+      120.24873430555556
+    ]
+  },
+  {
+    "filename": "DJI_20250606165612_0303_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmXGPkmF7QkBQmurf2uGCUkuXgkgxauuG2BAwZe6LDrbci",
+    "thumbnail": "thumbnails/DJI_20250606165612_0303_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:56",
+    "gps": [
+      29.254546277777777,
+      120.24827544444445
+    ]
+  },
+  {
+    "filename": "DJI_20250606152006_0281_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmdcFCbHfbDHPDUcHr9hC52cK95dAea1WXPzYtgBubDGSa",
+    "thumbnail": "thumbnails/DJI_20250606152006_0281_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:20",
+    "gps": [
+      -0.0,
+      -0.0
+    ]
+  },
+  {
+    "filename": "DJI_20250606142016_0277_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmTz6zJXiSFpcP4McBhUeeQD666iPXf6UPaiqbdV92ZQgS",
+    "thumbnail": "thumbnails/DJI_20250606142016_0277_D.JPG",
+    "width": 8064,
+    "height": 6048,
+    "date_taken": "2025-06-06 14:20",
+    "gps": [
+      29.25511325,
+      120.24867825
+    ]
+  },
+  {
+    "filename": "DJI_20250606153443_0288_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/Qmafw4eLMK3Y3dmQ5VsxEZ773T8EDGePoebmRNvVAD6rQo",
+    "thumbnail": "thumbnails/DJI_20250606153443_0288_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:34",
+    "gps": [
+      29.25477508333333,
+      120.24894433333334
+    ]
+  },
+  {
+    "filename": "DJI_20250606140258_0068_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/Qmbr4Y8Hjj8csb7nMqgLGJCSVfUaXwdQiLhmvvf8SExiTf",
+    "thumbnail": "thumbnails/DJI_20250606140258_0068_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:02",
+    "gps": [
+      29.254893638888888,
+      120.24874830555555
+    ]
+  },
+  {
+    "filename": "DJI_20250606085802_0226_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmXC7YsUZX9LWZ2ayKu1PzCvgBGYotXMZkqk57ouNigx2y",
+    "thumbnail": "thumbnails/DJI_20250606085802_0226_D.JPG",
+    "width": 8064,
+    "height": 6048,
+    "date_taken": "2025-06-06 08:58",
+    "gps": [
+      29.254454,
+      120.24876694444444
+    ]
+  },
+  {
+    "filename": "DJI_20250606133101_0253_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmRzMmvb3Tazn42cBhdpXw8tWMz49vhimXbCxnWcKzKA5V",
+    "thumbnail": "thumbnails/DJI_20250606133101_0253_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:31",
+    "gps": [
+      29.254798944444445,
+      120.24962733333334
+    ]
+  },
+  {
+    "filename": "DJI_20250606115543_0057_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/Qmds6jFfnerxSKDXdpVBg2hc7BZapJrucP8GH7bHUovK1a",
+    "thumbnail": "thumbnails/DJI_20250606115543_0057_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:55",
+    "gps": [
+      29.254786055555556,
+      120.24951594444444
+    ]
+  },
+  {
+    "filename": "DJI_20250606141407_0072_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmcViSwM8tpgX2G2s6cPjDRUYR4QaZonzvVtmrNHtCyPt8",
+    "thumbnail": "thumbnails/DJI_20250606141407_0072_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:14",
+    "gps": [
+      29.254928444444445,
+      120.24813694444444
+    ]
+  },
+  {
+    "filename": "DJI_20250606142244_0075_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmSuAyJL2bihaUYpEAPYmhNJ7tSGzSn4U7XVBnyqqLASWu",
+    "thumbnail": "thumbnails/DJI_20250606142244_0075_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:22",
+    "gps": [
+      29.25563436111111,
+      120.24834455555556
+    ]
+  },
+  {
+    "filename": "DJI_20250606153642_0080_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmUdbeXXJStoziAEA6yHm3dFJ5nEvASJtqmYAfAB4Kdmts",
+    "thumbnail": "thumbnails/DJI_20250606153642_0080_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:36",
+    "gps": [
+      29.255335916666667,
+      120.24850736111111
+    ]
+  },
+  {
+    "filename": "DJI_20250606153305_0287_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmZbNaW629XTe9peYXHijZzNRiq7m5TMP5uL15S3BhcKnB",
+    "thumbnail": "thumbnails/DJI_20250606153305_0287_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:33",
+    "gps": [
+      29.25447963888889,
+      120.2490546111111
+    ]
+  },
+  {
+    "filename": "DJI_20250606134958_0065_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmWoimaBjgwHA9g62vdJ8PccoT5p8THKXF4uJnTf3FivrV",
+    "thumbnail": "thumbnails/DJI_20250606134958_0065_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:49",
+    "gps": [
+      29.254773277777776,
+      120.24876430555555
+    ]
+  },
+  {
+    "filename": "DJI_20250606140723_0272_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmecU3oMLpJbEWAMBu1mUMpEn5LwiyTndmkXwozt6pTHsd",
+    "thumbnail": "thumbnails/DJI_20250606140723_0272_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:07",
+    "gps": [
+      29.255103305555554,
+      120.24794522222223
+    ]
+  },
+  {
+    "filename": "DJI_20250606133426_0059_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmUfTqmeo3GcVrnUfbgCCEfsRoSmxePvjUCjhp89iNaj4R",
+    "thumbnail": "thumbnails/DJI_20250606133426_0059_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:34",
+    "gps": [
+      29.255828666666666,
+      120.24939472222222
+    ]
+  },
+  {
+    "filename": "DJI_20250606133642_0060_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmUFj9x9HvWBy3zdEA5bmzegKsgjJhGMfiL1ipG9tUct3y",
+    "thumbnail": "thumbnails/DJI_20250606133642_0060_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:36",
+    "gps": [
+      29.25456,
+      120.24829611111112
+    ]
+  },
+  {
+    "filename": "DJI_20250606165321_0091_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmZWxr2GKVF7UEqVAiCpBvBESr7QHRvRCXihgKrsLP8qLP",
+    "thumbnail": "thumbnails/DJI_20250606165321_0091_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:53",
+    "gps": [
+      29.25502511111111,
+      120.24855241666667
+    ]
+  },
+  {
+    "filename": "DJI_20250606154506_0294_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmPGPqJNu1gmSpPNT38UFt3YMEVQ2113dm9Xt7H1aWjeeZ",
+    "thumbnail": "thumbnails/DJI_20250606154506_0294_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:45",
+    "gps": [
+      29.253982305555557,
+      120.24949236111111
+    ]
+  },
+  {
+    "filename": "DJI_20250606153953_0291_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmdwuZnxN7MCcTyXVaBoVJTEkeCNNivusmkgdTPJZBUnrc",
+    "thumbnail": "thumbnails/DJI_20250606153953_0291_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:39",
+    "gps": [
+      29.255352194444445,
+      120.24895997222222
+    ]
+  },
+  {
+    "filename": "DJI_20250606154150_0292_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmNNwcNs6s4zMgmmzVQViTcwWpyywS18dJ3A79KmWsPaAy",
+    "thumbnail": "thumbnails/DJI_20250606154150_0292_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:41",
+    "gps": [
+      29.25553536111111,
+      120.24973133333333
+    ]
+  },
+  {
+    "filename": "DJI_20250606141656_0276_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmcBE4cQ2Bxqbxgn2ZT4AtK3jGdBwZaqLgwXV8T2iQ9H5D",
+    "thumbnail": "thumbnails/DJI_20250606141656_0276_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:16",
+    "gps": [
+      29.25502,
+      120.24763422222222
+    ]
+  },
+  {
+    "filename": "DJI_20250606154117_0082_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmctdBcgBnczCK6FGFVbuHDVFHtL11kqkJmscuvryFpJBx",
+    "thumbnail": "thumbnails/DJI_20250606154117_0082_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:41",
+    "gps": [
+      29.25512697222222,
+      120.24951272222222
+    ]
+  },
+  {
+    "filename": "DJI_20250606135902_0270_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmUnVsQjK9UrPktMkNobWs4pE6XxEQ7UcCqgySpddsHKon",
+    "thumbnail": "thumbnails/DJI_20250606135902_0270_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:59",
+    "gps": [
+      29.254416666666668,
+      120.24889333333333
+    ]
+  },
+  {
+    "filename": "DJI_20250606113736_0243_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmQxxWjCL7TZS3PZDoSFjqBAPkzG1YsJeW2j1RNbgMyXeU",
+    "thumbnail": "thumbnails/DJI_20250606113736_0243_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:37",
+    "gps": [
+      29.256284583333333,
+      120.24761166666667
+    ]
+  },
+  {
+    "filename": "DJI_20250606133923_0061_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmYEzLNzEPwp3MLTx4Kt8LAr6fuEdjsQfAYo9oe6bZFu8t",
+    "thumbnail": "thumbnails/DJI_20250606133923_0061_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:39",
+    "gps": [
+      29.254139583333334,
+      120.2479775
+    ]
+  },
+  {
+    "filename": "DJI_20250606113916_0244_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmSZa83SuZnxjDYDW8Mg1Le7CD29NbCoXuARo9W9mDGSov",
+    "thumbnail": "thumbnails/DJI_20250606113916_0244_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:39",
+    "gps": [
+      29.255951305555556,
+      120.24773408333333
+    ]
+  },
+  {
+    "filename": "DJI_20250606114235_0247_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmRQg9KANxPr1fchbsyBWadW7kiq2nTXKdydxb3kxYYSQm",
+    "thumbnail": "thumbnails/DJI_20250606114235_0247_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:42",
+    "gps": [
+      29.255698638888887,
+      120.24783372222223
+    ]
+  },
+  {
+    "filename": "DJI_20250606163741_0088_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmegoFbzLshasL9Dp9RBS4gpcJ3o3PnzmrqtvVTCgqjeQ8",
+    "thumbnail": "thumbnails/DJI_20250606163741_0088_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:37",
+    "gps": [
+      29.256567944444445,
+      120.24912930555556
+    ]
+  },
+  {
+    "filename": "DJI_20250606135143_0066_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmNb868AoxE4YBkYdvZyPfEjmgMQ7gVdFyvuFYARqe7dWy",
+    "thumbnail": "thumbnails/DJI_20250606135143_0066_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:51",
+    "gps": [
+      29.254725333333333,
+      120.24878827777778
+    ]
+  },
+  {
+    "filename": "DJI_20250606113716_0050_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmbznagJUXWJwiY7YfkCbrKyPyQXZbjfJ9pc5Sgt5RHVnq",
+    "thumbnail": "thumbnails/DJI_20250606113716_0050_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:37",
+    "gps": [
+      29.256350444444443,
+      120.24744825
+    ]
+  },
+  {
+    "filename": "DJI_20250606143211_0280_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmaAgUjBWgWbUR8EMFtD5GtsPr1HYtS7Q4zVBWAQGhwXS9",
+    "thumbnail": "thumbnails/DJI_20250606143211_0280_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:32",
+    "gps": [
+      29.254138527777776,
+      120.24873655555555
+    ]
+  },
+  {
+    "filename": "DJI_20250606141609_0073_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmcHAKWBtK3XAmmDFoqTU1iNTXSqHAHkH4QiUPoQUkM3Zz",
+    "thumbnail": "thumbnails/DJI_20250606141609_0073_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:16",
+    "gps": [
+      29.25449011111111,
+      120.247857
+    ]
+  },
+  {
+    "filename": "DJI_20250606140840_0070_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmX6GNrSbN4T9vaWeGHGxRcLEBvnZPz6ivXdAkgvsf98Yu",
+    "thumbnail": "thumbnails/DJI_20250606140840_0070_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:08",
+    "gps": [
+      29.254648055555556,
+      120.24823752777777
+    ]
+  },
+  {
+    "filename": "DJI_20250606085055_0221_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmdQYcc6RGzFDzy8vQbinNuBAifHdUWaoCfmr7ArJ9zBMP",
+    "thumbnail": "thumbnails/DJI_20250606085055_0221_D.JPG",
+    "width": 8064,
+    "height": 6048,
+    "date_taken": "2025-06-06 08:50",
+    "gps": [
+      29.255094361111112,
+      120.24822883333333
+    ]
+  },
+  {
+    "filename": "DJI_20250606134748_0064_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmU7wc9Daj84XeViuRLt9USPKJ8dY9QFiZQDH7XmCRZMjH",
+    "thumbnail": "thumbnails/DJI_20250606134748_0064_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:47",
+    "gps": [
+      29.25474277777778,
+      120.24878930555556
+    ]
+  },
+  {
+    "filename": "DJI_20250606164502_0299_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmfXZ3JoBSYabSpCTZzcvKBPZfbTBCGA9gUfSGY6GRf95y",
+    "thumbnail": "thumbnails/DJI_20250606164502_0299_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:45",
+    "gps": [
+      29.25588011111111,
+      120.24820455555556
+    ]
+  },
+  {
+    "filename": "DJI_20250606143028_0279_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmVMhQaui1wkvi47NGqXGitniQqVQYxQUjfbUokvtuRgWj",
+    "thumbnail": "thumbnails/DJI_20250606143028_0279_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:30",
+    "gps": [
+      29.254211777777776,
+      120.24892777777778
+    ]
+  },
+  {
+    "filename": "DJI_20250606165347_0302_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmPPriuXJsC1HyzFqNSX4AMe7zY9MKACJ8Xd5iNgbWmoNc",
+    "thumbnail": "thumbnails/DJI_20250606165347_0302_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:53",
+    "gps": [
+      29.255345,
+      120.24755488888889
+    ]
+  },
+  {
+    "filename": "DJI_20250606114605_0249_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmVP4Dip71ZeiH6jxoAFihq77PEzcAoKTZtg33LszkriHm",
+    "thumbnail": "thumbnails/DJI_20250606114605_0249_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:46",
+    "gps": [
+      29.255972444444446,
+      120.24795897222222
+    ]
+  },
+  {
+    "filename": "DJI_20250606141207_0274_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmX9kFoEJ1UK5dDrVRVQ3F1C4NHrXyj8JGvWs33EwXeV96",
+    "thumbnail": "thumbnails/DJI_20250606141207_0274_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:12",
+    "gps": [
+      29.254069083333334,
+      120.24843713888889
+    ]
+  },
+  {
+    "filename": "DJI_20250606114758_0250_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmdPkxExeQhjvoKCv9wuVXQb1KEN9Z5Rzibxxb8rXjC1Cz",
+    "thumbnail": "thumbnails/DJI_20250606114758_0250_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:47",
+    "gps": [
+      29.25617788888889,
+      120.24852191666666
+    ]
+  },
+  {
+    "filename": "DJI_20250606141051_0071_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmZ29VdubbNMbnxhriiz7rAqFbewyuHc79nHu5PGH4DLtR",
+    "thumbnail": "thumbnails/DJI_20250606141051_0071_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:10",
+    "gps": [
+      29.25416963888889,
+      120.24800327777778
+    ]
+  },
+  {
+    "filename": "DJI_20250606155124_0086_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmPuYxTXSFpUTLwnRZu4ayrencNGUtGcU1bQ39ay9bJTgU",
+    "thumbnail": "thumbnails/DJI_20250606155124_0086_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:51",
+    "gps": [
+      29.256274472222223,
+      120.2480635
+    ]
+  },
+  {
+    "filename": "DJI_20250606140539_0271_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmddL5yoNjFYqaVcj6aFYwAGwrAJGPuwR1KXJRxSMqkufU",
+    "thumbnail": "thumbnails/DJI_20250606140539_0271_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:05",
+    "gps": [
+      29.25450488888889,
+      120.24827986111111
+    ]
+  },
+  {
+    "filename": "DJI_20250606092240_0046_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/Qme99act9MhS7eSTdpFjHFmdDJEsWrZ43YpBLDfPyFGrBC",
+    "thumbnail": "thumbnails/DJI_20250606092240_0046_D.JPG",
+    "width": 8064,
+    "height": 4536,
+    "date_taken": "2025-06-06 09:22",
+    "gps": [
+      29.2546425,
+      120.24916152777777
+    ]
+  },
+  {
+    "filename": "DJI_20250606154627_0084_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmTagWjoXAoHu439Rdi8vrjJUaEruLbVQXK94UMrtYsnmE",
+    "thumbnail": "thumbnails/DJI_20250606154627_0084_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:46",
+    "gps": [
+      29.255003777777777,
+      120.24999144444445
+    ]
+  },
+  {
+    "filename": "DJI_20250606114224_0246_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmQFTsLpGnWxpXWqDyKiC4WF3oRS4ozCgKQyGdzAhPfhBr",
+    "thumbnail": "thumbnails/DJI_20250606114224_0246_D.JPG",
+    "width": 8064,
+    "height": 6048,
+    "date_taken": "2025-06-06 11:42",
+    "gps": [
+      29.255700027777777,
+      120.2478321388889
+    ]
+  },
+  {
+    "filename": "DJI_20250606134450_0063_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmS79TuE58o8C7umWqzRHE92h13d7naP9aLWmzihPPpbE1",
+    "thumbnail": "thumbnails/DJI_20250606134450_0063_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:44",
+    "gps": [
+      29.25578836111111,
+      120.24780188888889
+    ]
+  },
+  {
+    "filename": "DJI_20250606115117_0055_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmUwf1NLXzAzNxb5xkt98PMdxx2TiqUjagJGbjhy94RDfb",
+    "thumbnail": "thumbnails/DJI_20250606115117_0055_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 11:51",
+    "gps": [
+      29.256142944444445,
+      120.24836594444444
+    ]
+  },
+  {
+    "filename": "DJI_20250606154331_0293_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmekBVUCraUk5Q1XSWDdomnUNqbKmzVpNWraTKKT3C2Ntd",
+    "thumbnail": "thumbnails/DJI_20250606154331_0293_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:43",
+    "gps": [
+      29.254507444444446,
+      120.250251
+    ]
+  },
+  {
+    "filename": "DJI_20250606153125_0286_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmXVari3Mjsn8gvKfZKCFzMwuVrDNb7DwAjRD9ydqv55eU",
+    "thumbnail": "thumbnails/DJI_20250606153125_0286_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 15:31",
+    "gps": [
+      29.25430927777778,
+      120.24912041666667
+    ]
+  },
+  {
+    "filename": "DJI_20250606163938_0298_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/Qmb6pmzsxiHVhfjgXpTorrFEtsp99GFTsHGbwz6QVfPkYf",
+    "thumbnail": "thumbnails/DJI_20250606163938_0298_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 16:39",
+    "gps": [
+      29.256008861111113,
+      120.24747897222223
+    ]
+  },
+  {
+    "filename": "DJI_20250606133436_0256_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmW411Zum7Z9MQN3HfugwJ3p3jmqmJ28eMww8rHnPU2g6J",
+    "thumbnail": "thumbnails/DJI_20250606133436_0256_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 13:34",
+    "gps": [
+      29.25400538888889,
+      120.24897805555555
+    ]
+  },
+  {
+    "filename": "DJI_20250606141938_0074_D.JPG",
+    "path": "https://collective-black-hippopotamus.myfilebase.com/ipfs/QmQSNG51wGxTY4Er668nb5UTsDf9D6yK78Fiug5zc77dpL",
+    "thumbnail": "thumbnails/DJI_20250606141938_0074_D.JPG",
+    "width": 12000,
+    "height": 6000,
+    "date_taken": "2025-06-06 14:19",
+    "gps": [
+      29.25547886111111,
+      120.24792444444445
+    ]
+  }
+]
+
+        // 初始化全景查看器
+        let viewer;
+        let map;
+        let markers = [];
+        let infoWindow;
+        let currentMarker;
+
+        // 默认全景图
+        const defaultPanorama = 'https://photo-sphere-viewer-data.netlify.app/assets/sphere.jpg';
+
+        // 初始化全景查看器
+        function initViewer(panorama) {
+            // 如果已经存在查看器，先销毁
+            if (viewer) {
+                viewer.destroy();
+            }
+
+            viewer = new PhotoSphereViewer.Viewer({
+                container: document.querySelector('#panorama'),
+                panorama: panorama,
+                caption: '360°全景图预览',
+                loadingImg: 'https://photo-sphere-viewer.js.org/assets/photosphere-logo.gif',
+                defaultZoomLvl: 50,
+                moveSpeed: 5,
+                autorotateDelay: 1000,
+                autorotateSpeed: '1rpm',
+                mousewheel: true,
+                navbar: [
+                    'autorotate',
+                    'zoom',
+                    'caption',
+                    'fullscreen'
+                ]
+            });
+
+            // 添加事件监听器
+            addEventListeners();
+        }
+
+        // 初始化地图
+        function initMap() {
+            // 创建地图实例
+            map = new AMap.Map('map-container', {
+                zoom: 16,
+                center: [120.248, 29.255],
+                viewMode: '3D',
+                mapStyle: 'amap://styles/darkblue'
+            });
+
+            // 创建信息窗口
+            infoWindow = new AMap.InfoWindow({
+                offset: new AMap.Pixel(0, -30),
+                closeWhenClickMap: true
+            });
+
+            // 添加标记点
+            addMarkers();
+
+            // 添加地图控制
+            addMapControls();
+
+            // 生成照片列表
+            generatePhotoList();
+        }
+
+        // 添加标记点
+        function addMarkers() {
+            panoramaData.forEach((item, index) => {
+                if (item.gps[0] === 0 && item.gps[1] === 0) return;
+
+                // 创建标记
+                const marker = new AMap.Marker({
+                    position: new AMap.LngLat(item.gps[1], item.gps[0]),
+                    map: map,
+                    title: item.filename,
+                    zIndex: 100,
+                    content: `
+                        <div style="background-color: #4facfe; width: 20px; height: 20px;
+                            border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                            display: flex; align-items: center; justify-content: center;">
+                            <div style="background-color: white; width: 6px; height: 6px; border-radius: 50%;"></div>
+                        </div>
+                    `
+                });
+
+                // 添加点击事件
+                marker.on('click', () => {
+                    // 重置之前选中的标记
+                    if (currentMarker) {
+                        currentMarker.setContent(`
+                            <div style="background-color: #4facfe; width: 20px; height: 20px;
+                                border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                                display: flex; align-items: center; justify-content: center;">
+                                <div style="background-color: white; width: 6px; height: 6px; border-radius: 50%;"></div>
+                            </div>
+                        `);
+                    }
+
+                    // 设置当前选中标记
+                    currentMarker = marker;
+                    marker.setContent(`
+                        <div style="background-color: #ff6b6b; width: 24px; height: 24px;
+                            border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                            display: flex; align-items: center; justify-content: center;">
+                            <div style="background-color: white; width: 8px; height: 8px; border-radius: 50%;"></div>
+                        </div>
+                    `);
+
+                    // 显示信息窗口
+                    const content = `
+                        <div class="info-window">
+                            <h4>${item.filename}</h4>
+                            <div class="info-thumbnail" style="background-image: url('${item.thumbnail}')"></div>
+                            <div class="info-details">
+                                <div><strong>拍摄时间:</strong> ${item.date_taken}</div>
+                                <div><strong>分辨率:</strong> ${item.width}×${item.height}</div>
+                                <div><strong>位置:</strong> ${item.gps[0].toFixed(6)}, ${item.gps[1].toFixed(6)}</div>
+                            </div>
+                            <button class="info-btn" onclick="loadPanorama('${item.path}')">查看全景图</button>
+                        </div>
+                    `;
+
+                    infoWindow.setContent(content);
+                    infoWindow.open(map, marker.getPosition());
+
+                    // 加载全景图
+                    loadPanorama(item.path);
+                });
+
+                markers.push(marker);
+            });
+        }
+
+        // 加载全景图
+        function loadPanorama(path) {
+            initViewer(path);
+        }
+
+        // 生成照片列表
+        function generatePhotoList() {
+            const listContainer = document.getElementById('photo-list');
+            listContainer.innerHTML = '';
+
+            panoramaData.forEach(item => {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                photoItem.onclick = () => {
+                    // 找到对应的标记并触发点击事件
+                    const marker = markers.find(m => m.getTitle() === item.filename);
+                    if (marker) {
+                        marker.emit('click', {target: marker});
+
+                        // 平滑滚动到标记位置
+                        const position = marker.getPosition();
+                        map.setCenter(position);
+                    }
+
+                    loadPanorama(item.path);
+                };
+
+                photoItem.innerHTML = `
+                    <div class="photo-thumb" style="background-image: url('${item.thumbnail}')"></div>
+                    <div class="photo-info">
+                        <div class="photo-name">${item.filename}</div>
+                        <div class="photo-meta">${item.date_taken} | ${item.width}×${item.height}</div>
+                    </div>
+                `;
+
+                listContainer.appendChild(photoItem);
+            });
+        }
+
+        // 添加地图控制
+        function addMapControls() {
+            // 添加缩放按钮事件
+            document.getElementById('zoom-in-btn').addEventListener('click', () => {
+                map.zoomIn();
+            });
+
+            document.getElementById('zoom-out-btn').addEventListener('click', () => {
+                map.zoomOut();
+            });
+
+            document.getElementById('reset-map-btn').addEventListener('click', () => {
+                map.setZoomAndCenter(16, [120.248, 29.255]);
+            });
+        }
+
+        // 添加事件监听器
+        function addEventListeners() {
+            // 重置视图
+            document.getElementById('reset-view-btn').addEventListener('click', function() {
+                viewer.reset();
+                viewer.rotate({longitude: 0, latitude: 0});
+                viewer.zoom(50);
+            });
+
+            // 移动速度控制
+            const moveSpeedSlider = document.getElementById('move-speed');
+            const moveSpeedValue = document.getElementById('move-speed-value');
+
+            moveSpeedSlider.addEventListener('input', function() {
+                const speed = parseInt(this.value);
+                moveSpeedValue.textContent = speed;
+                viewer.setOption('moveSpeed', speed);
+            });
+
+            // 缩放级别控制
+            const zoomLevelSlider = document.getElementById('zoom-level');
+            const zoomLevelValue = document.getElementById('zoom-level-value');
+
+            zoomLevelSlider.addEventListener('input', function() {
+                const zoom = parseInt(this.value);
+                zoomLevelValue.textContent = zoom;
+                viewer.zoom(zoom);
+            });
+
+            // 自动旋转
+            document.getElementById('autorotate').addEventListener('change', function() {
+                if (this.checked) {
+                    viewer.startAutorotate();
+                } else {
+                    viewer.stopAutorotate();
+                }
+            });
+
+            // 鼠标滚轮控制
+            document.getElementById('mouse-wheel').addEventListener('change', function() {
+                viewer.setOption('mousewheel', this.checked);
+            });
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('load', () => {
+            initViewer(defaultPanorama);
+            initMap();
+
+            // 将loadPanorama函数添加到全局作用域，以便在信息窗口中调用
+            window.loadPanorama = loadPanorama;
+        });
+    </script>
+</body>
+</html>

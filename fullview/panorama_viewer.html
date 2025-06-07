@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全景地图查看器 - 优化版</title>
+
+    <!-- 本地化Photo Sphere Viewer资源 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photo-sphere-viewer@4/dist/photo-sphere-viewer.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0d1b2a, #1a2a4f);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1800px;
+            margin: 0 auto;
+            height: 100vh;
+            padding: 15px;
+            gap: 15px;
+        }
+
+        header {
+            text-align: center;
+            padding: 15px 0;
+            background: rgba(20, 30, 48, 0.7);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.85;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .content {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            height: calc(100vh - 180px);
+        }
+
+        .map-container {
+            flex: 1;
+            background: rgba(15, 25, 40, 0.6);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background: #1e3c72;
+        }
+
+        .panorama-container {
+            width: 45%;
+            background: rgba(15, 25, 40, 0.6);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #panoramaViewer {
+            flex: 1;
+            background: #000;
+        }
+
+        .controls {
+            padding: 15px;
+            background: rgba(20, 30, 48, 0.8);
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 15px;
+            border-radius: 50px;
+        }
+
+        .stat-icon {
+            font-size: 1.3rem;
+            color: #4facfe;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.5);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #4facfe;
+            color: #4facfe;
+        }
+
+        .btn-outline:hover {
+            background: rgba(79, 172, 254, 0.1);
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(15, 25, 40, 0.8);
+            padding: 12px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .map-type-btn {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .map-type-btn.active {
+            background: #4facfe;
+            color: #0d1b2a;
+            font-weight: bold;
+        }
+
+        .map-type-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(15, 25, 40, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-panel h3 {
+            margin-bottom: 10px;
+            color: #00f2fe;
+            font-size: 1.2rem;
+        }
+
+        .info-panel p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .marker-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 25, 40, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .marker-info h3 {
+            color: #4facfe;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .marker-info p {
+            margin: 8px 0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .info-label {
+            min-width: 60px;
+            color: #00f2fe;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .gallery {
+            display: flex;
+            gap: 12px;
+            padding: 15px;
+            overflow-x: auto;
+            background: rgba(15, 25, 40, 0.7);
+        }
+
+        .gallery-item {
+            width: 120px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+            border-color: #4facfe;
+        }
+
+        .gallery-item.active {
+            border-color: #4facfe;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.7);
+        }
+
+        .psv-container {
+            height: 100% !important;
+        }
+
+        .custom-marker {
+            position: relative;
+            width: 36px;
+            height: 48px;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .marker-pin {
+            width: 36px;
+            height: 36px;
+            border-radius: 50% 50% 50% 0;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            position: absolute;
+            transform: rotate(-45deg);
+            left: 0;
+            top: 0;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .marker-label {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            color: white;
+            top: 5px;
+            left: 0;
+            transform: rotate(45deg);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(79, 172, 254, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 172, 254, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 172, 254, 0); }
+        }
+
+        .leaflet-marker-icon:hover .marker-pin {
+            transform: rotate(-45deg) scale(1.2);
+            animation: none;
+        }
+
+        .no-gps {
+            filter: grayscale(100%);
+            opacity: 0.7;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            transition: opacity 0.3s ease;
+        }
+
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 5px solid #4facfe;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: white;
+            text-align: center;
+        }
+
+        .error-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .error-title {
+            font-size: 2rem;
+            color: #e52e71;
+            margin-bottom: 20px;
+        }
+
+        .error-details {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 80%;
+            margin-top: 20px;
+            font-family: monospace;
+            text-align: left;
+            overflow: auto;
+            max-height: 200px;
+        }
+
+        .error-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #4facfe;
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .control-panel {
+            padding: 15px;
+            background: rgba(20, 30, 48, 0.8);
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #4facfe;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title i {
+            font-size: 1.4rem;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: #00f2fe;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00f2fe;
+            cursor: pointer;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        @media (max-width: 1200px) {
+            .content {
+                flex-direction: column;
+            }
+
+            .panorama-container {
+                width: 100%;
+                height: 40%;
+            }
+
+            .gallery {
+                padding: 10px;
+            }
+
+            .gallery-item {
+                width: 100px;
+                height: 70px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .subtitle {
+                font-size: 0.95rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .stats {
+                justify-content: center;
+            }
+
+            .btn-group {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .gallery-item {
+                width: 80px;
+                height: 55px;
+            }
+
+            .map-controls {
+                top: 10px;
+                right: 10px;
+            }
+        }
+
+        .instructions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .instructions h3 {
+            color: #4facfe;
+            margin-bottom: 8px;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+
+        .instructions li {
+            margin-bottom: 6px;
+        }
+    </style>
+
+    <!-- 高德地图安全配置 -->
+    <script type="text/javascript">
+        window._AMapSecurityConfig = {
+            // 如果您有安全密钥，请在此处填写
+            // securityJsCode: '您的安全密钥',
+        };
+    </script>
+
+    <!-- 高德地图API -->
+    <script src="https://webapi.amap.com/maps?v=2.0&key=9bf761684fe66c70a222411108493d76"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loader"></div>
+            <div class="loading-text">正在加载全景地图系统...</div>
+            <div class="loading-text" id="loading-details">初始化中...</div>
+        </div>
+
+        <div class="error-overlay" id="error-overlay" style="display: none;">
+            <div class="error-title"><i class="fas fa-exclamation-triangle"></i> 加载失败</div>
+            <div id="error-message">未知错误导致系统无法加载</div>
+            <div class="error-details" id="error-details"></div>
+            <button class="error-btn" id="retry-btn">重试</button>
+        </div>
+
+        <header>
+            <h1><i class="fas fa-globe-asia"></i> 全景地图查看器 - 优化版</h1>
+            <p class="subtitle">结合高德地图与Photo Sphere Viewer技术，提供沉浸式全景浏览体验</p>
+        </header>
+
+        <div class="content">
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="info-panel">
+                    <h3><i class="fas fa-info-circle"></i> 使用说明</h3>
+                    <p>1. 点击地图标记查看全景</p>
+                    <p>2. 使用底部画廊快速切换</p>
+                    <p>3. 全景图支持360°拖拽查看</p>
+                    <p>4. 右上角切换地图类型</p>
+                    <p>5. 使用导航按钮切换全景</p>
+                </div>
+                <div class="map-controls">
+                    <button class="map-type-btn active" id="satellite-btn">
+                        <i class="fas fa-satellite"></i> 卫星图
+                    </button>
+                    <button class="map-type-btn" id="road-btn">
+                        <i class="fas fa-map"></i> 街道图
+                    </button>
+                    <button class="map-type-btn" id="hybrid-btn">
+                        <i class="fas fa-layer-group"></i> 混合图
+                    </button>
+                </div>
+                <div class="marker-info">
+                    <h3><i class="fas fa-map-marker-alt"></i> 全景图信息</h3>
+                    <p><span class="info-label">名称:</span> <span id="pano-name">未选择</span></p>
+                    <p><span class="info-label">日期:</span> <span id="pano-date">-</span></p>
+                    <p><span class="info-label">坐标:</span> <span id="pano-coords">-</span></p>
+                    <p><span class="info-label">尺寸:</span> <span id="pano-size">-</span></p>
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panorama-container">
+                <div id="panoramaViewer"></div>
+                <div class="gallery" id="gallery"></div>
+                <div class="controls">
+                    <div class="stats">
+                        <div class="stat-item">
+                            <span class="stat-icon"><i class="fas fa-map-marker-alt"></i></span>
+                            <span id="marker-count">0 个全景点</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-icon"><i class="fas fa-image"></i></span>
+                            <span id="image-count">0 张图片</span>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn" id="prev-btn">
+                            <i class="fas fa-chevron-left"></i> 上一个
+                        </button>
+                        <button class="btn" id="next-btn">
+                            下一个 <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button class="btn btn-outline" id="reset-btn">
+                            <i class="fas fa-sync-alt"></i> 重置视图
+                        </button>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <h2 class="panel-title"><i class="fas fa-sliders-h"></i> 全景控制</h2>
+
+                    <div class="control-group">
+                        <h3>移动速度</h3>
+                        <div class="slider-container">
+                            <input type="range" id="move-speed" min="1" max="20" value="5">
+                            <div class="slider-value" id="move-speed-value">5</div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>缩放级别</h3>
+                        <div class="slider-container">
+                            <input type="range" id="zoom-level" min="0" max="100" value="50">
+                            <div class="slider-value" id="zoom-level-value">50</div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>其他设置</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="autorotate" checked>
+                            <label for="autorotate">自动旋转</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="mouse-wheel" checked>
+                            <label for="mouse-wheel">启用鼠标滚轮缩放</label>
+                        </div>
+                    </div>
+
+                    <div class="instructions">
+                        <h3>操作提示：</h3>
+                        <ul>
+                            <li>鼠标拖拽：旋转全景视图</li>
+                            <li>鼠标滚轮：缩放视图</li>
+                            <li>双击：放大特定区域</li>
+                            <li>使用控制面板调整参数</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 依赖库 -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uevent@2.0.0/browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/photo-sphere-viewer@4/dist/photo-sphere-viewer.min.js"></script>
+    <script>
+        // 全景图数据
+        let panoramas = [];
+        let currentPanoIndex = 0;
+
+        // 地图实例
+        let map = null;
+        let satelliteLayer, roadLayer, hybridLayer;
+        let currentLayer;
+
+        // 全景查看器实例
+        let psv = null;
+
+        // 调试信息
+        const debugInfo = document.getElementById('debug-info');
+        const debugContent = document.getElementById('debug-content');
+        const loadingDetails = document.getElementById('loading-details');
+        const debugToggle = document.getElementById('debug-toggle');
+
+        // 高德地图图层
+        function initAMapLayers() {
+            try {
+                // 卫星图
+                satelliteLayer = L.tileLayer('https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}', {
+                    attribution: '&copy; 高德地图'
+                });
+
+                // 街道图
+                roadLayer = L.tileLayer('https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+                    attribution: '&copy; 高德地图'
+                });
+
+                // 混合图（卫星+道路）
+                hybridLayer = L.tileLayer('https://webst01.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}', {
+                    attribution: '&copy; 高德地图'
+                });
+
+                return true;
+            } catch (e) {
+                console.error('地图图层初始化失败:', e);
+                return false;
+            }
+        }
+
+        // 初始化地图 - 只执行一次
+        function initMap() {
+            // 检查地图是否已经初始化
+            if (map) {
+                return true;
+            }
+
+            try {
+                // 创建地图实例
+                map = L.map('map', {
+                    center: [29.255, 120.248], // 使用您的全景图平均位置
+                    zoom: 16,
+                    zoomControl: false,
+                    preferCanvas: true // 优化性能
+                });
+
+                // 初始化高德地图图层
+                if (!initAMapLayers()) {
+                    // 如果高德地图失败，使用OpenStreetMap作为后备
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors'
+                    }).addTo(map);
+
+                    // 隐藏地图类型切换按钮
+                    document.querySelector('.map-controls').style.display = 'none';
+                } else {
+                    // 添加默认图层（卫星图）
+                    satelliteLayer.addTo(map);
+                    currentLayer = 'satellite';
+
+                    // 添加缩放控件
+                    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+                    // 添加比例尺
+                    L.control.scale({position: 'bottomleft'}).addTo(map);
+                }
+
+                return true;
+            } catch (e) {
+                console.error('地图初始化失败:', e);
+                showError('地图初始化失败', e.message);
+                return false;
+            }
+        }
+
+        // 加载索引数据
+        function loadPanoramaIndex() {
+            // 模拟全景索引数据
+            panoramas = [
+                {
+                    "filename": "DJI_20250606135027_0267_D.JPG",
+                    "path": "https://photo-sphere-viewer-data.netlify.app/assets/sphere.jpg",
+                    "thumbnail": "https://photo-sphere-viewer-data.netlify.app/assets/sphere.jpg",
+                    "width": 12000,
+                    "height": 6000,
+                    "date_taken": "2025-06-06 13:50",
+                    "gps": [29.254916833333333, 120.24877413888889]
+                },
+                {
+                    "filename": "DJI_20250606165707_0092_D.JPG",
+                    "path": "https://photo-sphere-viewer-data.netlify.app/assets/potala-palace.jpg",
+                    "thumbnail": "https://photo-sphere-viewer-data.netlify.app/assets/potala-palace.jpg",
+                    "width": 12000,
+                    "height": 6000,
+                    "date_taken": "2025-06-06 16:57",
+                    "gps": [29.254480555555556, 120.24774761111111]
+                },
+                {
+                    "filename": "DJI_20250606140938_0273_D.JPG",
+                    "path": "https://photo-sphere-viewer-data.netlify.app/assets/chess.jpg",
+                    "thumbnail": "https://photo-sphere-viewer-data.netlify.app/assets/chess.jpg",
+                    "width": 12000,
+                    "height": 6000,
+                    "date_taken": "2025-06-06 14:09",
+                    "gps": [29.255200527777777, 120.24805]
+                },
+                {
+                    "filename": "DJI_20250606164826_0089_D.JPG",
+                    "path": "https://photo-sphere-viewer-data.netlify.app/assets/above-the-clouds.jpg",
+                    "thumbnail": "https://photo-sphere-viewer-data.netlify.app/assets/above-the-clouds.jpg",
+                    "width": 12000,
+                    "height": 6000,
+                    "date_taken": "2025-06-06 16:48",
+                    "gps": [29.254944555555557, 120.24905755555555]
+                }
+            ];
+
+            initMarkers();
+            updateStats();
+            initGallery();
+
+            if (panoramas.length > 0) {
+                showPanorama(0);
+                // 隐藏加载层
+                setTimeout(() => {
+                    document.getElementById('loading-overlay').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('loading-overlay').style.display = 'none';
+                    }, 300);
+                }, 500);
+            } else {
+                showError('没有有效全景图', '全景索引中没有包含有效GPS坐标的全景图');
+            }
+        }
+
+        // 显示错误信息
+        function showError(title, details) {
+            document.getElementById('loading-overlay').style.display = 'none';
+            const errorOverlay = document.getElementById('error-overlay');
+            document.getElementById('error-message').textContent = title;
+            document.getElementById('error-details').textContent = details || '无详细信息';
+            errorOverlay.style.display = 'flex';
+        }
+
+        // 初始化地图标记
+        let markers = [];
+
+        function initMarkers() {
+            // 清除现有标记
+            if (markers.length > 0) {
+                markers.forEach(marker => {
+                    if (marker && map) {
+                        map.removeLayer(marker);
+                    }
+                });
+            }
+            markers = [];
+
+            // 如果没有全景数据，使用默认位置
+            if (panoramas.length === 0) {
+                if (map) map.setView([29.255, 120.248], 16);
+                return;
+            }
+
+            // 计算中心点
+            let latSum = 0;
+            let lngSum = 0;
+            let validCount = 0;
+
+            // 创建标记
+            panoramas.forEach((pano, index) => {
+                try {
+                    const hasGPS = pano.gps && pano.gps[0] && pano.gps[1];
+
+                    if (hasGPS) {
+                        const coords = pano.gps;
+                        latSum += coords[0];
+                        lngSum += coords[1];
+                        validCount++;
+
+                        // 创建自定义标记
+                        const marker = L.marker(coords, {
+                            title: pano.filename,
+                            icon: L.divIcon({
+                                className: `custom-marker`,
+                                html: `
+                                    <div class="marker-pin"></div>
+                                    <div class="marker-label">${index + 1}</div>
+                                `,
+                                iconSize: [36, 48],
+                                iconAnchor: [18, 48]
+                            })
+                        });
+
+                        if (map) {
+                            marker.addTo(map);
+                            markers.push(marker);
+
+                            marker.on('click', () => {
+                                showPanorama(index);
+                                if (map) map.setView(coords, 18, {animate: true});
+                            });
+                        }
+                    }
+                } catch (markerError) {
+                    console.error(`创建标记 ${index} 时出错:`, markerError);
+                }
+            });
+
+            // 设置地图视图
+            if (validCount > 0 && map) {
+                const centerLat = latSum / validCount;
+                const centerLng = lngSum / validCount;
+                map.setView([centerLat, centerLng], 16);
+            }
+        }
+
+        // 初始化缩略图画廊
+        function initGallery() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            panoramas.forEach((pano, index) => {
+                const img = document.createElement('img');
+                img.src = pano.thumbnail || pano.path;
+                img.alt = pano.filename;
+                img.title = pano.filename;
+                img.classList.add('gallery-item');
+                if (index === 0 && panoramas.length > 0) {
+                    img.classList.add('active');
+                }
+                img.onclick = () => {
+                    showPanorama(index);
+                    if (pano.gps && map) {
+                        map.setView(pano.gps, 18, {animate: true});
+                    }
+                };
+                gallery.appendChild(img);
+            });
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const gpsCount = panoramas.filter(p => p.gps).length;
+            document.getElementById('marker-count').textContent = `${gpsCount} 个全景点`;
+            document.getElementById('image-count').textContent = `${panoramas.length} 张图片`;
+        }
+
+        // 显示全景图
+        function showPanorama(index) {
+            if (index < 0 || index >= panoramas.length) return;
+
+            currentPanoIndex = index;
+            const pano = panoramas[index];
+
+            // 更新信息面板
+            document.querySelector('.marker-info').style.display = 'block';
+            document.getElementById('pano-name').textContent = pano.filename;
+            document.getElementById('pano-date').textContent = pano.date_taken || '未知';
+            document.getElementById('pano-size').textContent = `${pano.width} × ${pano.height} 像素`;
+
+            if (pano.gps) {
+                document.getElementById('pano-coords').textContent =
+                    `${pano.gps[0].toFixed(6)}, ${pano.gps[1].toFixed(6)}`;
+            } else {
+                document.getElementById('pano-coords').textContent = '无GPS信息';
+            }
+
+            // 显示进度条
+            const progressBar = document.querySelector('.progress-bar');
+            const progress = document.querySelector('.progress');
+            progressBar.style.display = 'block';
+            progress.style.width = '0%';
+
+            // 销毁旧的全景查看器
+            if (psv) {
+                try {
+                    psv.destroy();
+                } catch (e) {
+                    console.error('销毁全景查看器失败:', e);
+                }
+                psv = null;
+            }
+
+            // 创建新的全景查看器
+            try {
+                psv = new PhotoSphereViewer.Viewer({
+                    container: document.querySelector('#panoramaViewer'),
+                    panorama: pano.path,
+                    caption: pano.filename,
+                    loadingImg: 'https://photo-sphere-viewer.js.org/assets/photosphere-logo.gif',
+                    touchmoveTwoFingers: true,
+                    mousewheelCtrlKey: true,
+                    navbar: [
+                        'autorotate',
+                        'zoom',
+                        'move',
+                        'download',
+                        'caption',
+                        'fullscreen'
+                    ],
+                    time_anim: 3000,
+                    defaultZoomLvl: 50,
+                    moveSpeed: parseInt(document.getElementById('move-speed').value),
+                    autorotateDelay: 1000,
+                    autorotateSpeed: '1rpm',
+                    onReady: () => {
+                        // 隐藏进度条
+                        progressBar.style.display = 'none';
+
+                        // 设置自动旋转
+                        if (document.getElementById('autorotate').checked) {
+                            psv.startAutorotate();
+                        }
+                    },
+                    onProgress: (value) => {
+                        progress.style.width = `${value}%`;
+                    },
+                    onError: (error) => {
+                        console.error('全景图加载失败:', error);
+                        showError('全景图加载失败', `文件: ${pano.filename}\n错误: ${error}`);
+                    }
+                });
+            } catch (e) {
+                console.error('创建全景查看器失败:', e);
+                showError('创建全景查看器失败', e.message);
+            }
+
+            // 高亮当前画廊项
+            const galleryItems = document.querySelectorAll('.gallery-item');
+            galleryItems.forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        // 事件绑定函数
+        function bindEvents() {
+            // 上一个全景
+            document.getElementById('prev-btn').addEventListener('click', () => {
+                let newIndex = currentPanoIndex - 1;
+                if (newIndex < 0) newIndex = panoramas.length - 1;
+                showPanorama(newIndex);
+
+                // 定位到对应的标记
+                const pano = panoramas[newIndex];
+                if (pano.gps && map) {
+                    map.setView(pano.gps, 18, {animate: true});
+                }
+            });
+
+            // 下一个全景
+            document.getElementById('next-btn').addEventListener('click', () => {
+                let newIndex = currentPanoIndex + 1;
+                if (newIndex >= panoramas.length) newIndex = 0;
+                showPanorama(newIndex);
+
+                // 定位到对应的标记
+                const pano = panoramas[newIndex];
+                if (pano.gps && map) {
+                    map.setView(pano.gps, 18, {animate: true});
+                }
+            });
+
+            // 重置按钮事件
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                if (panoramas.length > 0 && map) {
+                    let latSum = 0;
+                    let lngSum = 0;
+                    let count = 0;
+
+                    panoramas.forEach(pano => {
+                        if (pano.gps) {
+                            latSum += pano.gps[0];
+                            lngSum += pano.gps[1];
+                            count++;
+                        }
+                    });
+
+                    if (count > 0) {
+                        const centerLat = latSum / count;
+                        const centerLng = lngSum / count;
+                        map.setView([centerLat, centerLng], 16, {animate: true});
+                    }
+                }
+
+                // 重置全景图
+                if (psv) {
+                    psv.reset();
+                    psv.rotate({longitude: 0, latitude: 0});
+                    psv.zoom(50);
+                }
+            });
+
+            // 地图类型切换
+            document.getElementById('satellite-btn').addEventListener('click', () => {
+                if (currentLayer !== 'satellite' && map && satelliteLayer) {
+                    map.removeLayer(roadLayer);
+                    map.removeLayer(hybridLayer);
+                    satelliteLayer.addTo(map);
+                    currentLayer = 'satellite';
+                    document.getElementById('satellite-btn').classList.add('active');
+                    document.getElementById('road-btn').classList.remove('active');
+                    document.getElementById('hybrid-btn').classList.remove('active');
+                }
+            });
+
+            document.getElementById('road-btn').addEventListener('click', () => {
+                if (currentLayer !== 'road' && map && roadLayer) {
+                    map.removeLayer(satelliteLayer);
+                    map.removeLayer(hybridLayer);
+                    roadLayer.addTo(map);
+                    currentLayer = 'road';
+                    document.getElementById('road-btn').classList.add('active');
+                    document.getElementById('satellite-btn').classList.remove('active');
+                    document.getElementById('hybrid-btn').classList.remove('active');
+                }
+            });
+
+            document.getElementById('hybrid-btn').addEventListener('click', () => {
+                if (currentLayer !== 'hybrid' && map && hybridLayer) {
+                    map.removeLayer(satelliteLayer);
+                    map.removeLayer(roadLayer);
+                    hybridLayer.addTo(map);
+                    currentLayer = 'hybrid';
+                    document.getElementById('hybrid-btn').classList.add('active');
+                    document.getElementById('satellite-btn').classList.remove('active');
+                    document.getElementById('road-btn').classList.remove('active');
+                }
+            });
+
+            // 重试按钮
+            document.getElementById('retry-btn').addEventListener('click', () => {
+                document.getElementById('error-overlay').style.display = 'none';
+                document.getElementById('loading-overlay').style.display = 'flex';
+                document.getElementById('loading-overlay').style.opacity = '1';
+                setTimeout(initializeSystem, 1000);
+            });
+
+            // 移动速度控制
+            const moveSpeedSlider = document.getElementById('move-speed');
+            const moveSpeedValue = document.getElementById('move-speed-value');
+
+            moveSpeedSlider.addEventListener('input', function() {
+                const speed = parseInt(this.value);
+                moveSpeedValue.textContent = speed;
+                if (psv) {
+                    psv.setOption('moveSpeed', speed);
+                }
+            });
+
+            // 缩放级别控制
+            const zoomLevelSlider = document.getElementById('zoom-level');
+            const zoomLevelValue = document.getElementById('zoom-level-value');
+
+            zoomLevelSlider.addEventListener('input', function() {
+                const zoom = parseInt(this.value);
+                zoomLevelValue.textContent = zoom;
+                if (psv) {
+                    psv.zoom(zoom);
+                }
+            });
+
+            // 自动旋转
+            document.getElementById('autorotate').addEventListener('change', function() {
+                if (psv) {
+                    if (this.checked) {
+                        psv.startAutorotate();
+                    } else {
+                        psv.stopAutorotate();
+                    }
+                }
+            });
+
+            // 鼠标滚轮控制
+            document.getElementById('mouse-wheel').addEventListener('change', function() {
+                if (psv) {
+                    psv.setOption('mousewheel', this.checked);
+                }
+            });
+        }
+
+        // 初始化系统
+        function initializeSystem() {
+            // 初始化地图
+            if (!initMap()) {
+                return;
+            }
+
+            // 绑定事件
+            bindEvents();
+
+            // 加载全景数据
+            loadPanoramaIndex();
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', initializeSystem);
+    </script>
+</body>
+</html>
